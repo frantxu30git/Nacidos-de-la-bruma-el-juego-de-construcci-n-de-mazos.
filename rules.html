@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reglas - Nacidos de la Bruma</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #121212;
+      --paper: #ede4d2;
+      --ink: #241d16;
+      --muted: #6f6252;
+      --gold: #b78a35;
+      --red: #9d3f36;
+      --green: #5b8d63;
+      --blue: #4f759d;
+      --line: rgba(67,52,32,.24);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 50% -18%, #494336 0, #181818 45%, #0d0d0d 100%);
+      color: var(--ink);
+      font-family: "Segoe UI", system-ui, sans-serif;
+      letter-spacing: 0;
+    }
+    .shell {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 18px 48px;
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 22px;
+    }
+    .nav {
+      position: sticky;
+      top: 18px;
+      align-self: start;
+      background: #1f2022;
+      color: #f4ead7;
+      border: 1px solid #3e3a32;
+      border-radius: 8px;
+      padding: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.28);
+    }
+    .nav h1 {
+      font-size: 18px;
+      line-height: 1.1;
+      margin: 0 0 4px;
+      color: #ffd879;
+    }
+    .nav p {
+      margin: 0 0 14px;
+      color: #cfc4b4;
+      font-size: 12px;
+    }
+    .nav a {
+      display: block;
+      color: #f5ead7;
+      text-decoration: none;
+      padding: 8px 9px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .nav a:hover { background: #34312b; }
+    .manual {
+      background: var(--paper);
+      border-radius: 10px;
+      border: 1px solid #9a845c;
+      box-shadow: 0 18px 60px rgba(0,0,0,.38);
+      overflow: hidden;
+    }
+    .hero {
+      min-height: 230px;
+      padding: 34px;
+      color: #fff4dc;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.1), rgba(0,0,0,.72)),
+        radial-gradient(circle at 75% 20%, rgba(255,235,164,.28), transparent 24%),
+        linear-gradient(135deg, #80622f, #3a3e42 45%, #161616);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      border-bottom: 5px solid #8c692a;
+    }
+    .hero h2 {
+      margin: 0;
+      font-size: clamp(34px, 6vw, 64px);
+      line-height: .95;
+    }
+    .hero p {
+      margin: 12px 0 0;
+      max-width: 700px;
+      color: #f3dfb5;
+      font-size: 16px;
+    }
+    section {
+      padding: 26px 34px;
+      border-bottom: 1px solid var(--line);
+    }
+    h3 {
+      margin: 0 0 12px;
+      font-size: 24px;
+      color: #3a2815;
+    }
+    h4 {
+      margin: 18px 0 8px;
+      font-size: 15px;
+      color: #6b4618;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    p { line-height: 1.55; margin: 8px 0; }
+    ul, ol { margin: 8px 0 0 20px; padding: 0; line-height: 1.55; }
+    li { margin: 5px 0; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .card {
+      background: rgba(255,255,255,.38);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .card strong { color: #392713; }
+    .callout {
+      background: #fff7e6;
+      border-left: 5px solid var(--gold);
+      padding: 13px 15px;
+      border-radius: 6px;
+      margin: 14px 0;
+    }
+    .danger { border-left-color: var(--red); }
+    .coop { border-left-color: var(--blue); }
+    .icons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 8px;
+    }
+    .iconrow {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      background: rgba(255,255,255,.34);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 8px;
+      min-height: 45px;
+    }
+    .ico {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: grid;
+      place-items: center;
+      background: rgba(60,47,29,.12);
+      border: 1px solid rgba(55,41,21,.25);
+      flex: 0 0 auto;
+    }
+    .ico svg { width: 22px; height: 22px; }
+    .small { color: var(--muted); font-size: 13px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      overflow: hidden;
+      border-radius: 8px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    th {
+      background: #473721;
+      color: #fff2d3;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    tr:nth-child(even) td { background: rgba(255,255,255,.25); }
+    @media (max-width: 860px) {
+      .shell { grid-template-columns: 1fr; }
+      .nav { position: static; }
+      section, .hero { padding-left: 20px; padding-right: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="nav">
+      <h1>Nacidos de la Bruma</h1>
+      <p>Reglas de la versión digital</p>
+      <a href="#objetivo">Objetivo</a>
+      <a href="#preparacion">Preparación</a>
+      <a href="#turno">Turno</a>
+      <a href="#metales">Metales</a>
+      <a href="#cartas">Cartas</a>
+      <a href="#personajes">Personajes</a>
+      <a href="#misiones">Misiones</a>
+      <a href="#combate">Combate</a>
+      <a href="#lord">Lord Legislador</a>
+      <a href="#edictos">Edictos Y Adversarios</a>
+      <a href="#iconos">Iconos</a>
+    </nav>
+
+    <main class="manual">
+      <header class="hero">
+        <h2>Reglamento</h2>
+        <p>Construye tu mazo, quema metales, cumple misiones y sobrevive a la bruma. Esta guía explica la implementación jugable de la mesa digital.</p>
+      </header>
+
+      <section id="objetivo">
+        <h3>Objetivo</h3>
+        <p>Empiezas con un mazo débil y lo mejoras comprando cartas del mercado. Puedes ganar de varias formas según el modo de partida.</p>
+        <div class="grid">
+          <div class="card"><strong>Competitivo:</strong> gana quien complete las tres misiones o sea la última persona con vida.</div>
+          <div class="card"><strong>Lord Legislador:</strong> la rebelión gana si derrota al Lord Legislador o completa las tres misiones.</div>
+          <div class="card"><strong>Derrota cooperativa:</strong> el Imperio gana si la dominancia llega a 12 o todos los jugadores caen.</div>
+        </div>
+      </section>
+
+      <section id="preparacion">
+        <h3>Preparación</h3>
+        <ol>
+          <li>Entra en una sala y elige modo competitivo o Lord Legislador.</li>
+          <li>Pulsa <strong>Nueva partida</strong> para crear el estado de mesa.</li>
+          <li>Cada jugador recibe 6 cartas de Fondos y 4 cartas de entrenamiento.</li>
+          <li>Se revelan 6 cartas de mercado y 3 misiones.</li>
+          <li>Al empezar, cada jugador roba 5 cartas.</li>
+        </ol>
+        <div class="callout">Si cambiaste reglas o nombres durante una partida antigua, crea una partida nueva para regenerar cartas y textos.</div>
+      </section>
+
+      <section id="turno">
+        <h3>Estructura Del Turno</h3>
+        <ol>
+          <li>Avanzas 1 punto en tu pista de entrenamiento.</li>
+          <li>Juegas cartas de tu mano en cualquier orden.</li>
+          <li>Quemas, fuerzas o usas cartas como metal para activar efectos.</li>
+          <li>Compras cartas del mercado o monedas guardadas si tienes monedas suficientes.</li>
+          <li>Asignas puntos de misión a una o varias misiones.</li>
+          <li>Usas combate contra aliados, jugadores o el Lord Legislador.</li>
+          <li>Descartas cartas jugadas y mano restante, y robas 5 cartas nuevas.</li>
+        </ol>
+        <div class="callout">
+          Preparar una carta no quema metal. Puedes preparar varias acciones en tu zona de juego, convertir una carta preparada en metal si aún no la activaste, o desprepararla para devolverla a tu mano. Solo puedes activar una carta si puedes pagar su metal con una ficha disponible, una carta usada como metal, Atium o forzando una ficha.
+        </div>
+      </section>
+
+      <section id="metales">
+        <h3>Metales</h3>
+        <p>Las acciones requieren un metal concreto para activarse. Puedes pagar ese metal de tres formas.</p>
+        <div class="grid">
+          <div class="card"><strong>Quemar:</strong> usa una ficha de metal disponible. Tu límite inicial es 1 por turno y sube con entrenamiento.</div>
+          <div class="card"><strong>Forzar:</strong> usa una ficha por encima del límite. Queda avivada y no disponible hasta que la refresques.</div>
+          <div class="card"><strong>Como metal:</strong> una carta de acción puede jugarse de lado para aportar uno de sus metales.</div>
+          <div class="card"><strong>Atium:</strong> sirve para cartas de Atium o como metal comodín. Se gasta al usarlo.</div>
+        </div>
+        <h4>Refrescar</h4>
+        <p>Algunos efectos refrescan metales avivados. También puedes descartar una carta compatible para refrescar un metal de su pareja.</p>
+        <p>En la interfaz, un metal avivado aparece marcado como no disponible. Un metal usado este turno aparece marcado como usado hasta que termina tu turno.</p>
+      </section>
+
+      <section id="cartas">
+        <h3>Cartas</h3>
+        <table>
+          <thead><tr><th>Tipo</th><th>Cómo funciona</th></tr></thead>
+          <tbody>
+            <tr><td>Fondos</td><td>Dan monedas para comprar cartas y monedas guardadas.</td></tr>
+            <tr><td>Acción</td><td>Entran en juego, se activan quemando el metal requerido y se descartan al final del turno.</td></tr>
+            <tr><td>Aliado</td><td>Permanece en mesa hasta que sea derrotado. Sus efectos se disparan cuando quemas su metal.</td></tr>
+            <tr><td>Entrenamiento</td><td>Cartas iniciales que dan efectos sencillos y también sirven como metales de su pareja.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="personajes">
+        <h3>Personajes</h3>
+        <p>Cada jugador recibe uno de los personajes principales. Su habilidad se activa una vez por turno cuando quemas su metal característico.</p>
+        <div class="grid">
+          <div class="card"><strong>Kelsier:</strong> al quemar Acero, +1 combate y +1 moneda.</div>
+          <div class="card"><strong>Vin:</strong> al quemar Peltre, +1 combate y +1 curación.</div>
+          <div class="card"><strong>Shan Elariel:</strong> al quemar Latón, +1 misión y +1 moneda.</div>
+          <div class="card"><strong>Marsh:</strong> al quemar Hierro, +2 combate.</div>
+        </div>
+        <h4>Entrenamiento de personaje</h4>
+        <p>Además de aumentar tu límite de metales y ganar Atium, cada personaje desbloquea ventajas propias en los niveles 3, 6 y 9 de entrenamiento. Estas ventajas se resuelven inmediatamente al alcanzarlas.</p>
+      </section>
+
+      <section id="misiones">
+        <h3>Misiones</h3>
+        <p>Cuando ganas puntos de misión puedes asignarlos a cualquier misión activa. Cada pista llega a 12.</p>
+        <ul>
+          <li>Al alcanzar ciertos hitos recibes recompensas inmediatas.</li>
+          <li>Completar las tres misiones gana la partida en ambos modos.</li>
+          <li>Puedes repartir varios puntos de misión entre pistas distintas durante tu turno.</li>
+        </ul>
+      </section>
+
+      <section id="combate">
+        <h3>Combate</h3>
+        <p>El combate acumulado durante tu turno se gasta para derrotar aliados o dañar objetivos.</p>
+        <div class="grid">
+          <div class="card"><strong>Aliados:</strong> debes pagar su defensa completa en un ataque. No reciben daño parcial.</div>
+          <div class="card"><strong>Dos jugadores:</strong> puedes atacar directamente al rival.</div>
+          <div class="card"><strong>Tres o cuatro:</strong> se usa el objetivo. Normalmente debes dañar al jugador que lo tiene.</div>
+          <div class="card"><strong>Vida:</strong> los jugadores caen a 0. La curación no supera 40.</div>
+        </div>
+      </section>
+
+      <section id="lord">
+        <h3>Modo Lord Legislador</h3>
+        <div class="callout coop">
+          En este modo no hay objetivo entre jugadores. El enemigo común es el Lord Legislador.
+        </div>
+        <ol>
+          <li>El Lord tiene 48 de vida.</li>
+          <li>La dominancia empieza en 1 y puede subir hasta 6.</li>
+          <li>Después del turno de cada jugador, se resuelven sus adversarios y se revela una carta del mazo del Lord.</li>
+          <li>La rebelión gana si baja la vida del Lord a 0 o completa las tres misiones.</li>
+          <li>El Lord gana si su mazo se agota o todos los jugadores quedan eliminados.</li>
+        </ol>
+      </section>
+
+      <section id="edictos">
+        <h3>Edictos, Adversarios Y Dominancia</h3>
+        <h4>Dominancia</h4>
+        <p>La dominancia representa el foco del Lord Legislador. Su valor actual se usa cuando una carta muestra <strong>X</strong>. Al subir dominancia se aplica el efecto revelado de la pista.</p>
+        <div class="grid">
+          <div class="card"><strong>2:</strong> el jugador activo sufre 2 daño.</div>
+          <div class="card"><strong>3:</strong> todos sufren 2 daño.</div>
+          <div class="card"><strong>4:</strong> se elimina la carta más barata del mercado.</div>
+          <div class="card"><strong>5:</strong> el jugador activo sufre X daño.</div>
+          <div class="card"><strong>6:</strong> todos sufren X daño.</div>
+        </div>
+        <h4>Edictos</h4>
+        <p>Los edictos son cartas instantáneas del Lord. Se resuelven en orden y van al descarte del Lord. Pueden subir dominancia, dañar a los jugadores, curar al Lord por misiones incompletas, descartar cartas o purgar el mercado.</p>
+        <h4>Adversarios</h4>
+        <p>Los adversarios son aliados del Lord. Se colocan frente al jugador que los revela y permanecen en mesa hasta ser derrotados. Al final del turno de ese jugador aplican su efecto.</p>
+        <ul>
+          <li>Cada adversario tiene escudos que deben romperse de izquierda a derecha.</li>
+          <li>Un escudo con X requiere combate igual a la dominancia actual.</li>
+          <li>Cualquier jugador puede atacar adversarios, aunque estén frente a otro jugador.</li>
+          <li>Cuando todos sus escudos se rompen, el adversario va al descarte del Lord.</li>
+        </ul>
+      </section>
+
+      <section id="iconos">
+        <h3>Iconos</h3>
+        <div class="icons" id="legend"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    function icon(kind){
+      const svgs = {
+        train:`<path d="M5 16h14l-3-9H8z" fill="#222"/><path d="M7 16l-3 4M11 16l-1 4M15 16l1 4M19 16l3 4" stroke="#222" stroke-width="2" stroke-linecap="round"/><path d="M8 7h8l-1-4H9z" fill="#39464a"/>`,
+        combat:`<path d="M4 4l16 16M20 4L4 20" stroke="#a9252e" stroke-width="5" stroke-linecap="round"/><path d="M4 4l16 16M20 4L4 20" stroke="#301014" stroke-width="2" stroke-linecap="round"/>`,
+        mission:`<rect x="5" y="3" width="14" height="18" rx="2" fill="#eadcb1" stroke="#6b5940" stroke-width="2"/><path d="M8 7h8M8 11h8" stroke="#d2a449" stroke-width="1.5"/>`,
+        heal:`<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z" fill="#75b84a" stroke="#477431" stroke-width="1.5"/>`,
+        coin:`<circle cx="12" cy="12" r="9" fill="#c5a24f" stroke="#81651f" stroke-width="2"/><path d="M7 10c3-3 7-3 10 0" stroke="#ead384" stroke-width="2" fill="none"/>`,
+        burnExtra:`<path d="M12 3c3 4-1 5 3 8 1-3 4-2 4 2 0 5-3 8-7 8s-7-3-7-8c0-3 2-6 5-9-1 4 1 5 2 7 2-2-1-4 0-8z" fill="#f5f5f2" stroke="#333" stroke-width="1.5"/><path d="M12 14c2 2 1 5-1 6 4 0 5-5 1-6z" fill="#d2a449"/>`,
+        draw:`<path d="M4 14l8-8 8 8h-5v5H9v-5z" fill="#f4f4f4" stroke="#2b2b2b" stroke-width="2"/><path d="M6 20h12" stroke="#2b2b2b" stroke-width="2"/>`,
+        refresh:`<circle cx="12" cy="12" r="9" fill="#e8ece7" stroke="#5b6360" stroke-width="1.5"/><path d="M6 12h10" stroke="#66a74e" stroke-width="4" stroke-linecap="round"/><path d="M14 7l5 5-5 5z" fill="#222"/>`,
+        trash:`<path d="M4 16l5-5-5-5 4-4 5 5 5-5 4 4-5 5 5 5-4 4-5-5-5 5z" fill="#d72f36" stroke="#fff" stroke-width="2"/><path d="M3 21h18" stroke="#333" stroke-width="2"/>`,
+        dominance:`<path d="M12 3l8 8h-5v10H9V11H4z" fill="#4aa3d8" stroke="#1f5d82" stroke-width="1.7"/>`,
+        burn:`<path d="M12 4c4 5-2 6 3 10 1-3 4-2 4 2 0 4-3 6-7 6s-7-2-7-6c0-3 2-6 5-10-1 4 1 6 2 8 2-3-1-5 0-10z" fill="#3a3a3a" stroke="#111" stroke-width="1.5"/>`,
+        atium:`<circle cx="12" cy="12" r="9" fill="#f1edda" stroke="#8e8a68" stroke-width="2"/><path d="M8 15c2-6 6-6 8 0M9 9h.1M15 9h.1" stroke="#4f4b35" stroke-width="2" fill="none"/>`
+      };
+      return `<span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true">${svgs[kind]}</svg></span>`;
+    }
+    const rows = [
+      ["train","Entrenar","Avanza en la pista de entrenamiento."],
+      ["combat","Combate","Daño contra aliados, jugadores o el Lord."],
+      ["mission","Misión","Avanza en una misión activa."],
+      ["heal","Curar","Recupera vida, hasta un máximo de 40."],
+      ["coin","Moneda","Recurso para comprar cartas o reserva."],
+      ["burnExtra","Quemar +1","Aumenta tu límite de metales quemados."],
+      ["draw","Robar","Roba cartas de tu mazo."],
+      ["refresh","Refrescar","Recupera un metal forzado."],
+      ["trash","Eliminar","Retira una carta de la partida."],
+      ["dominance","Dominancia","Avanza el poder del Lord Legislador."],
+      ["burn","Quemar","Requiere quemar ese metal."],
+      ["atium","Atium","Metal especial y comodín."]
+    ];
+    document.getElementById("legend").innerHTML = rows.map(([k,n,t]) => `<div class="iconrow">${icon(k)}<div><strong>${n}</strong><div class="small">${t}</div></div></div>`).join("");
+  </script>
+</body>
+</html>

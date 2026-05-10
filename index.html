@@ -1,0 +1,2195 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nacidos de la Bruma - Deckbuilder</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #141414;
+      --panel: #202123;
+      --panel2: #292b2e;
+      --line: #474a4f;
+      --text: #f2eee6;
+      --muted: #b7b0a4;
+      --red: #c44d3d;
+      --gold: #d2a449;
+      --green: #5fa578;
+      --blue: #5d8ec7;
+      --ink: #101010;
+    }
+    * { box-sizing: border-box; }
+    html { height: 100%; }
+    body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% -20%, #3d3931 0, #181818 42%, #101010 100%);
+      color: var(--text);
+      font-family: "Segoe UI", system-ui, sans-serif;
+      letter-spacing: 0;
+    }
+    body.emptyMode .topbar {
+      display: none;
+    }
+    body.emptyMode .layout {
+      height: 100vh;
+      grid-template-columns: 1fr;
+      padding: 8px;
+      gap: 8px;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(210,164,73,.16), transparent 34%),
+        linear-gradient(135deg, #151515, #0b0b0b);
+    }
+    body.emptyMode .layout > aside.panel {
+      display: none;
+    }
+    body.emptyMode .layout > section.panel {
+      border: 1px solid #3a3c40;
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.025), transparent 80px),
+        rgba(28,29,31,.96);
+      box-shadow: 0 10px 28px rgba(0,0,0,.22);
+      padding: 10px;
+    }
+    button, input, select {
+      font: inherit;
+    }
+    button {
+      border: 1px solid #6f6658;
+      background: #2c2d2f;
+      color: var(--text);
+      border-radius: 6px;
+      padding: 6px 9px;
+      cursor: pointer;
+    }
+    button:hover { background: #3a3b3e; }
+    button.primary { background: #8d6b2d; border-color: #d2a449; color: #fff7df; }
+    button.danger { background: #74352f; border-color: #c44d3d; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    input, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #18191b;
+      color: var(--text);
+      border-radius: 6px;
+      padding: 7px 9px;
+    }
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(360px, 520px) 1fr;
+      gap: 10px;
+      padding: 8px 10px;
+      border-bottom: 1px solid #383632;
+      background: rgba(18,18,18,.92);
+      z-index: 5;
+      min-height: 54px;
+    }
+    .join {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) 92px 82px;
+      gap: 8px;
+      align-items: center;
+    }
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: flex-end;
+      color: var(--muted);
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+    .status select { width: 180px; }
+    .status button { padding: 6px 9px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #777; display: inline-block; }
+    .dot.on { background: #55c979; }
+    .layout {
+      display: grid;
+      grid-template-columns: clamp(270px, 15vw, 330px) minmax(0, 1fr) clamp(280px, 15vw, 340px);
+      gap: 8px;
+      padding: 8px;
+      height: calc(100vh - 54px);
+      min-height: 0;
+      overflow: hidden;
+    }
+    .panel {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.025), transparent 80px),
+        rgba(28,29,31,.96);
+      border: 1px solid #3a3c40;
+      border-radius: 8px;
+      padding: 10px;
+      min-width: 0;
+      min-height: 0;
+      box-shadow: 0 10px 28px rgba(0,0,0,.22);
+    }
+    .layout > aside.panel {
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: thin;
+    }
+    .layout > section.panel {
+      display: grid;
+      grid-template-rows: auto auto minmax(320px, 350px) auto minmax(0, 1fr);
+      gap: 8px;
+      overflow: hidden;
+    }
+    .layout > section.panel.emptyBoard {
+      display: flex;
+      flex-direction: column;
+    }
+    .emptyBoard > h2,
+    .emptyBoard > .row.between,
+    .emptyBoard #market,
+    .emptyBoard .boardZones {
+      display: none !important;
+    }
+    .emptyBoard > #emptyHeroWrap {
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+    }
+    h1, h2, h3 { margin: 0; }
+    h1 { font-size: 16px; }
+    h2 { font-size: 14px; color: #f4d68d; margin-bottom: 6px; }
+    h3 { font-size: 13px; color: var(--muted); margin: 8px 0 6px; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .between { justify-content: space-between; }
+    .stack { display: grid; gap: 8px; align-content: start; }
+    .tiny { font-size: 12px; color: var(--muted); }
+    .pill {
+      border: 1px solid #5b5750;
+      border-radius: 999px;
+      padding: 2px 6px;
+      color: #f4e4bd;
+      background: #24221f;
+      font-size: 10px;
+    }
+    .resources {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      max-width: 520px;
+    }
+    .resChip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 28px;
+      padding: 3px 7px;
+      border: 1px solid #5f5b52;
+      border-radius: 7px;
+      background: #272522;
+      color: #f5ead0;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+    }
+    .resChip .ico {
+      width: 19px;
+      height: 19px;
+      background: rgba(255,255,255,.18);
+      flex: 0 0 auto;
+    }
+    .resValue {
+      font-size: 13px;
+      font-weight: 800;
+      min-width: 16px;
+      text-align: center;
+      color: #fff8e6;
+    }
+    .resLabel {
+      font-size: 10px;
+      color: #cfc4ad;
+      white-space: nowrap;
+    }
+    .players, .missions, .log, .chatlog { display: grid; gap: 6px; }
+    .player {
+      border: 1px solid #4a4c50;
+      background: #25262a;
+      border-radius: 7px;
+      padding: 7px;
+    }
+    .player.active { outline: 2px solid var(--gold); }
+    .player.dead { opacity: .5; }
+    .character {
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      gap: 7px;
+      align-items: center;
+      margin-top: 6px;
+      padding: 5px;
+      background: rgba(0,0,0,.16);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 6px;
+    }
+    .portrait {
+      width: 38px;
+      height: 38px;
+      border-radius: 6px;
+      object-fit: cover;
+      border: 1px solid rgba(255,255,255,.2);
+      background: #111;
+    }
+    .trainingLine {
+      display: grid;
+      grid-template-columns: repeat(11, 1fr);
+      gap: 2px;
+      margin-top: 6px;
+    }
+    .trainingStep {
+      height: 9px;
+      border-radius: 2px;
+      background: #141518;
+      border: 1px solid #3c3e42;
+    }
+    .trainingStep.on { background: #d2a449; border-color: #ffe0a0; }
+    .trainingPerks {
+      display: grid;
+      gap: 3px;
+      margin-top: 5px;
+    }
+    .perk {
+      font-size: 10px;
+      color: #cfc4b4;
+    }
+    .perk.on { color: #ffe0a0; font-weight: 700; }
+    .bars { display: grid; gap: 4px; margin-top: 6px; }
+    .bar {
+      height: 8px;
+      background: #161719;
+      border-radius: 99px;
+      overflow: auto;
+      scrollbar-width: thin;
+      border: 1px solid #3b3d40;
+    }
+    .bar span { display: block; height: 100%; background: var(--green); }
+    .mission .bar span { background: var(--blue); }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, 154px);
+      gap: 9px;
+      align-items: start;
+    }
+    .card {
+      width: 154px;
+      height: 318px;
+      background: #101113;
+      color: #f4ead7;
+      border: 2px solid #0c0d0f;
+      border-radius: 11px;
+      padding: 0;
+      display: grid;
+      grid-template-rows: 28px 84px minmax(0, 1fr) auto;
+      gap: 0;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.14) inset,
+        0 10px 24px rgba(0,0,0,.42);
+      overflow: hidden;
+      position: relative;
+      animation: none;
+    }
+    .card::after {
+      content: "";
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      border: 3px solid rgba(255,255,255,.07);
+      border-radius: 9px;
+    }
+    .card.ally {
+      background: #0f1511;
+      border-color: #263b2a;
+    }
+    .card.funding {
+      background: #17140c;
+      border-color: #6d5420;
+    }
+    .card.metaluse { opacity: .72; transform: rotate(-1deg); }
+    .card .name { font-weight: 700; font-size: 14px; }
+    .titleBar {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 30px 4px 9px;
+      background:
+        linear-gradient(90deg, #1a1d20, #3f4346 48%, #191b1d),
+        repeating-linear-gradient(135deg, transparent 0 8px, rgba(255,255,255,.08) 8px 10px);
+      border-bottom: 1px solid rgba(255,255,255,.18);
+      text-transform: uppercase;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .04em;
+      text-align: center;
+      min-width: 0;
+      line-height: 1.05;
+      overflow: hidden;
+    }
+    .card.ally .titleBar { background: linear-gradient(90deg, #17231a, #4c6650, #17231a); }
+    .card.funding .titleBar { background: linear-gradient(90deg, #2d220d, #8f7430, #2d220d); }
+    .artWrap {
+      position: relative;
+      min-height: 88px;
+      overflow: hidden;
+      border-bottom: 2px solid rgba(0,0,0,.75);
+      background: #2b2b2b;
+    }
+    .art {
+      width: 100%;
+      height: 100%;
+      min-height: 88px;
+      object-fit: cover;
+      background: #222;
+      display: block;
+      filter: saturate(1.08) contrast(1.04);
+    }
+    .artWrap::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.44)),
+        radial-gradient(circle at 80% 12%, rgba(255,255,255,.26), transparent 24%);
+    }
+    .costBadge {
+      position: absolute;
+      top: 3px;
+      right: 5px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 900;
+      color: #fff7d9;
+      background: radial-gradient(circle at 35% 25%, #f2d888, #9b7427 68%, #4f3610);
+      border: 2px solid rgba(255,244,198,.75);
+      box-shadow: 0 2px 8px rgba(0,0,0,.35);
+      z-index: 1;
+    }
+    .metalRibbon {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      z-index: 1;
+      min-width: 58%;
+      padding: 4px 8px 4px 10px;
+      border-radius: 0 6px 0 0;
+      background: linear-gradient(90deg, rgba(30,34,36,.96), rgba(70,75,76,.92));
+      border-top: 1px solid rgba(255,255,255,.25);
+      border-right: 1px solid rgba(255,255,255,.25);
+      color: #fff4d0;
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    .cardBody {
+      padding: 7px 8px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-height: 0;
+      background: linear-gradient(180deg, #1a1b1c, #101113);
+      overflow: hidden;
+    }
+    .card .name {
+      display: none;
+    }
+    .card .meta {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      min-height: 22px;
+      max-height: 24px;
+      overflow: hidden;
+    }
+    .icons {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      min-height: 25px;
+      max-height: 27px;
+      overflow: hidden;
+      align-items: center;
+      padding: 4px;
+      border-radius: 5px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.11);
+    }
+    .ico {
+      width: 19px;
+      height: 19px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 5px;
+      background: rgba(255,255,255,.35);
+      border: 1px solid rgba(0,0,0,.22);
+    }
+    .ico svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+    }
+    .icoText {
+      font-size: 11px;
+      font-weight: 700;
+      color: #211b14;
+      margin-left: -2px;
+      margin-right: 3px;
+    }
+    .tag {
+      border-radius: 4px;
+      padding: 2px 5px;
+      background: rgba(255,255,255,.09);
+      border: 1px solid rgba(255,255,255,.14);
+      font-size: 9px;
+      text-transform: uppercase;
+      color: #e9dcc5;
+    }
+    .card .text {
+      flex: 1 1 auto;
+      min-height: 0;
+      max-height: none;
+      font-size: 10.5px;
+      line-height: 1.28;
+      color: #f3ead8;
+      padding: 6px 7px;
+      border: 1px solid rgba(110,158,194,.48);
+      background: #101821;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .card .actions {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      align-self: end;
+      align-content: flex-start;
+      padding: 6px 7px 7px;
+      background: linear-gradient(180deg, #0f1012, #090a0b);
+      border-top: 1px solid rgba(255,255,255,.12);
+      overflow: hidden;
+      min-height: 0;
+      max-height: 72px;
+    }
+    .card button {
+      color: #2b2110;
+      background: #fff4d3;
+      border-color: #9a7b3c;
+      padding: 4px 6px;
+      font-size: 10px;
+      box-shadow: 0 1px 0 rgba(255,255,255,.45) inset;
+    }
+    .card button.danger { background: #f0c3bc; }
+    .cardControls {
+      display: grid;
+      grid-template-rows: auto;
+      gap: 5px;
+      width: 100%;
+    }
+    .mainControls {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      align-content: flex-start;
+    }
+    .powerBox {
+      display: grid;
+      gap: 2px;
+      margin-top: 2px;
+      flex: 0 0 auto;
+    }
+    .powerRow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 5px;
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.1);
+      font-size: 9px;
+      color: #d8cdb7;
+    }
+    
+.emptyState {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+}
+
+        #emptyHeroWrap {
+      display: none;
+      padding: 24px 16px;
+      overflow: auto;
+      scrollbar-width: thin;
+    }
+
+.emptyHero {
+  width: min(1100px, 100%);
+  min-height: 0;
+  margin: auto;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid #6d5a36;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.82)),
+    radial-gradient(circle at 70% 20%, rgba(244,214,141,.18), transparent 28%),
+    linear-gradient(135deg, #3b2c12, #1a1d22 55%, #0d0d0d);
+  box-shadow: 0 18px 50px rgba(0,0,0,.45);
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 32px;
+  align-items: center;
+  padding: 42px;
+}
+
+    .emptyHero h2 {
+      font-size: clamp(42px, 5vw, 68px) !important;
+      line-height: .95;
+      margin: 0 0 10px;
+      color: #fff3cf;
+      letter-spacing: 0;
+    }
+    .emptyHero p {
+      max-width: 680px;
+      margin: 0 0 18px;
+      color: #e7d8b8;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .emptyPanel {
+      align-self: stretch;
+      display: grid;
+      align-content: center;
+      gap: 12px;
+      padding: 18px;
+      border-radius: 10px;
+      background: rgba(10,10,10,.42);
+      border: 1px solid rgba(255,255,255,.12);
+      backdrop-filter: blur(2px);
+    }
+    .emptyForm {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .emptyForm select,
+    .emptyForm input {
+      width: 100%;
+    }
+    .emptyForm .wide {
+      grid-column: 1 / -1;
+    }
+    .emptyStat {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+      color: #f4e6c8;
+    }
+    .emptyHero .row button {
+      padding: 9px 13px;
+    }
+    .fxLayer {
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      overflow: hidden;
+    }
+    .fxBurst {
+      position: absolute;
+      left: 50%;
+      top: 45%;
+      transform: translate(-50%, -50%);
+      padding: 12px 18px;
+      border-radius: 999px;
+      color: #fff7df;
+      background: rgba(15,15,15,.78);
+      border: 1px solid #d2a449;
+      box-shadow: 0 0 42px rgba(210,164,73,.45);
+      animation: burst 900ms ease-out forwards;
+      font-weight: 800;
+      letter-spacing: .02em;
+    }
+    .fxBurst.combat { border-color: #c44d3d; box-shadow: 0 0 46px rgba(196,77,61,.5); }
+    .fxBurst.mission { border-color: #5d8ec7; box-shadow: 0 0 46px rgba(93,142,199,.48); }
+    .fxBurst.coin { border-color: #d2a449; }
+    @keyframes burst {
+      0% { opacity: 0; transform: translate(-50%, -42%) scale(.9); }
+      18% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -66%) scale(1.08); }
+    }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+    
+    @keyframes zonePulse {
+      0% { box-shadow: inset 0 0 0 1px rgba(210,164,73,.1), 0 0 0 rgba(210,164,73,0); }
+      35% { box-shadow: inset 0 0 0 1px rgba(210,164,73,.75), 0 0 28px rgba(210,164,73,.26); }
+      100% { box-shadow: inset 0 1px 0 rgba(255,255,255,.03), 0 0 0 rgba(210,164,73,0); }
+    }
+    .powerRow strong {
+      color: #ffe0a0;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .vialChip {
+      position: absolute;
+      right: 7px;
+      bottom: 6px;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 3px 5px;
+      border-radius: 999px;
+      color: #10212b;
+      background: linear-gradient(180deg, #e4f3fb, #8fc5dc 55%, #497b91);
+      border: 1px solid #d5f2ff;
+      box-shadow: 0 2px 6px rgba(0,0,0,.35);
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .vialChip::before {
+      content: "";
+      width: 11px;
+      height: 7px;
+      border-radius: 2px 2px 5px 5px;
+      background: linear-gradient(180deg, #d7a94b, #5f85a0);
+      border: 1px solid rgba(0,0,0,.25);
+    }
+    .market {
+      margin-bottom: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 2px 2px 8px;
+      scrollbar-width: thin;
+    }
+    #market {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: start;
+    }
+    .boardZones {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 150px minmax(320px, 1.25fr) minmax(260px, .9fr) minmax(210px, .75fr) 150px 150px;
+      grid-template-rows: minmax(0, 1fr);
+      gap: 8px;
+      overflow: auto;
+      scrollbar-width: thin;
+    }
+    .zone {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 6px;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid #3d4045;
+      background:
+        radial-gradient(circle at 50% 0, rgba(210,164,73,.08), transparent 42%),
+        rgba(16,17,19,.66);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+    }
+    .zone.flash {
+      animation: zonePulse 520ms ease-out;
+    }
+    .zoneHead {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-width: 0;
+    }
+    .zoneHead h2 {
+      margin: 0;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .zoneCount {
+      color: #d9c9a9;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .zone .cards {
+      overflow: auto;
+      align-content: start;
+      padding: 2px 2px 8px;
+      scrollbar-width: thin;
+    }
+    #hand .cards,
+    #play .cards,
+    #allies .cards {
+      grid-template-columns: repeat(auto-fill, minmax(154px, 154px));
+    }
+    #discard .cards,
+    #trash .cards {
+      grid-template-columns: 1fr;
+    }
+    #discard .card,
+    #trash .card {
+      transform: scale(.82);
+      transform-origin: top left;
+      margin-bottom: -54px;
+    }
+    .deckStack {
+      position: relative;
+      min-height: 210px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+    .deckBack {
+      position: absolute;
+      width: 112px;
+      height: 166px;
+      border-radius: 10px;
+      border: 2px solid #6c5a32;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.12), transparent 34%),
+        radial-gradient(circle at 50% 36%, rgba(210,164,73,.35), transparent 28%),
+        linear-gradient(180deg, #25272b, #0d0e10);
+      box-shadow: 0 8px 18px rgba(0,0,0,.42);
+    }
+    .deckBack::after {
+      content: "BRUMA";
+      position: absolute;
+      inset: auto 0 18px;
+      text-align: center;
+      color: #f6e6bd;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .12em;
+    }
+    .deckMeta {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #111;
+      border: 1px solid #6d5a36;
+      color: #ffe0a0;
+      font-size: 11px;
+      z-index: 8;
+    }
+    .metals {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+    }
+    .metal {
+      border: 1px solid #666;
+      border-radius: 6px;
+      text-align: center;
+      padding: 5px 2px;
+      font-size: 11px;
+      background: #303236;
+      position: relative;
+      min-height: 30px;
+    }
+    .metal.used { outline: 2px solid #d2a449; }
+    .metal.flared {
+      background: repeating-linear-gradient(135deg, #35191d 0 6px, #451f25 6px 12px);
+      color: #ffd0c8;
+      border-color: #c44d3d;
+      opacity: .72;
+    }
+    .metal.flared::after {
+      content: "AVIVADO";
+      position: absolute;
+      left: 50%;
+      bottom: -9px;
+      transform: translateX(-50%);
+      font-size: 8px;
+      line-height: 1;
+      padding: 2px 4px;
+      border-radius: 3px;
+      background: #5d2025;
+      color: #ffd8d2;
+      border: 1px solid #c44d3d;
+      white-space: nowrap;
+      z-index: 1;
+    }
+    .metal.used:not(.flared)::after {
+      content: "USADO";
+      position: absolute;
+      right: 3px;
+      top: 2px;
+      font-size: 8px;
+      color: #ffe0a0;
+    }
+    .metal.locked { opacity: .42; }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 16px;
+      transform: translateX(-50%);
+      background: #0f0f10;
+      border: 1px solid var(--gold);
+      padding: 10px 14px;
+      border-radius: 8px;
+      display: none;
+      z-index: 10;
+    }
+    #legend {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 2px 6px;
+    }
+    #legend > div {
+      margin: 1px 0 !important;
+      min-width: 0;
+    }
+    #legend .ico {
+      width: 17px;
+      height: 17px;
+    }
+    #legend .ico svg {
+      width: 14px;
+      height: 14px;
+    }
+    #actions button,
+    #chatBtn,
+    .mission button,
+    #lordPanel button,
+    .player button {
+      padding: 5px 7px;
+      font-size: 11px;
+    }
+    #chatInput { min-width: 0; }
+    .chatlog, .log {
+      max-height: 24vh;
+      overflow: auto;
+      font-size: 12px;
+      color: #d9d1c3;
+    }
+    @media (max-width: 1040px) {
+      .layout { grid-template-columns: 1fr; }
+      .topbar { grid-template-columns: 1fr; }
+      .status { justify-content: flex-start; }
+    }
+    @media (max-width: 560px) {
+      .join { grid-template-columns: 1fr; }
+      .cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="join">
+      <input id="nameInput" maxlength="18" placeholder="Nombre">
+      <input id="roomInput" maxlength="10" placeholder="Sala">
+      <button id="joinBtn" class="primary">Entrar</button>
+    </div>
+    <div class="status">
+      <span><span id="dot" class="dot"></span> <span id="conn">desconectado</span></span>
+      <span id="identity"></span>
+      <button id="newBtn">Nueva partida</button>
+      <button id="leaveBtn" class="danger">Abandonar</button>
+      <select id="modeInput" title="Modo">
+        <option value="duel">Competitivo</option>
+        <option value="lord">Lord Legislador</option>
+      </select>
+      <button id="startBtn" class="primary">Empezar</button>
+      <button id="helpBtn">Reglas</button>
+    </div>
+  </div>
+
+  <main class="layout">
+    <aside class="panel stack">
+      <div>
+        <h1>Nacidos de la Bruma</h1>
+        <div class="tiny">Deckbuilder online para 1-4 personas</div>
+      </div>
+      <div>
+        <h2>Jugadores</h2>
+        <div id="players" class="players"></div>
+      </div>
+      <div>
+        <h2>Lord Legislador</h2>
+        <div id="lordPanel" class="player tiny">Modo competitivo.</div>
+      </div>
+      <div>
+        <h2>Misiones</h2>
+        <div id="missions" class="missions"></div>
+      </div>
+      <div>
+        <h2>Metales</h2>
+        <div id="metals" class="metals"></div>
+      </div>
+    </aside>
+
+    <section class="panel">
+      <div class="row between">
+        <div>
+          <h2 id="turnTitle">Mesa</h2>
+          <div id="turnInfo" class="tiny"></div>
+        </div>
+        <div class="row">
+          <span id="resources" class="resources"></span>
+          <button id="endTurnBtn" class="danger">Fin de turno</button>
+        </div>
+      </div>
+
+      <h2>Mercado</h2>
+      <div id="market" class="cards market"></div>
+
+      <div class="boardZones">
+        <section id="deckZone" class="zone">
+          <div class="zoneHead"><h2>Mazo</h2><span id="deckCount" class="zoneCount">0</span></div>
+          <div id="deckStack" class="deckStack"></div>
+        </section>
+        <section id="hand" class="zone">
+          <div class="zoneHead"><h2>Mano</h2><span id="handCount" class="zoneCount">0</span></div>
+          <div class="cards" id="handCards"></div>
+        </section>
+        <section id="play" class="zone">
+          <div class="zoneHead"><h2>En juego</h2><span id="playCount" class="zoneCount">0</span></div>
+          <div class="cards" id="playCards"></div>
+        </section>
+        <section id="allies" class="zone">
+          <div class="zoneHead"><h2>Aliados</h2><span id="allyCount" class="zoneCount">0</span></div>
+          <div class="cards" id="allyCards"></div>
+        </section>
+        <section id="discard" class="zone">
+          <div class="zoneHead"><h2>Descarte</h2><span id="discardCount" class="zoneCount">0</span></div>
+          <div class="cards" id="discardCards"></div>
+        </section>
+        <section id="trash" class="zone">
+          <div class="zoneHead"><h2>Eliminadas</h2><span id="trashCount" class="zoneCount">0</span></div>
+          <div class="cards" id="trashCards"></div>
+        </section>
+      </div>
+    </section>
+
+    <aside class="panel stack">
+      <div>
+        <h2>Acciones</h2>
+        <div id="actions" class="stack"></div>
+      </div>
+      <div>
+        <h2>Iconos</h2>
+        <div id="legend" class="tiny"></div>
+      </div>
+      <div>
+        <h2>Registro</h2>
+        <div id="log" class="log"></div>
+      </div>
+      <div>
+        <h2>Chat</h2>
+        <div id="chatlog" class="chatlog"></div>
+        <div class="row" style="margin-top:8px">
+          <input id="chatInput" placeholder="Mensaje">
+          <button id="chatBtn">Enviar</button>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <div id="toast" class="toast"></div>
+  <div id="fxLayer" class="fxLayer"></div>
+
+  <script>
+    const METALS = ["Tin","Pewter","Bronze","Copper","Zinc","Brass","Iron","Steel"];
+    const PAIRS = [["Tin","Pewter"],["Bronze","Copper"],["Zinc","Brass"],["Iron","Steel"]];
+    const COLORS = ["#cf5e4a","#5fa578","#5d8ec7","#d2a449"];
+    const $ = (id) => document.getElementById(id);
+    // Each tab gets its own clientId via sessionStorage (not localStorage, which is shared)
+    let clientId = sessionStorage.clientId || "";
+    if(!clientId){ clientId = Math.random().toString(36).slice(2,12); sessionStorage.clientId = clientId; }
+    let room = localStorage.room || "BRUMA";
+    let presence = [];
+    let tab = "hand";
+    let state = null;
+    let suppressSend = false;
+
+    const ES = {
+      Tin:"Estaño", Pewter:"Peltre", Bronze:"Bronce", Copper:"Cobre", Zinc:"Zinc", Brass:"Latón",
+      Iron:"Hierro", Steel:"Acero", Atium:"Atium", Coin:"Moneda", Mist:"Bruma",
+      action:"Acción", ally:"Aliado", funding:"Fondos"
+    };
+    const es = (v) => ES[v] || v;
+
+    const characters = [
+      { id:"kelsier", name:"Kelsier", metal:"Steel", text:"Superviviente: al quemar Acero, +1 combate y +1 moneda.", eff:{combat:1, coin:1}, training:[
+        { at:3, name:"Mentor skaa", text:"Al desbloquear: +1 misión.", eff:{mission:1} },
+        { at:6, name:"Plan imposible", text:"Al desbloquear: roba 1 carta.", eff:{draw:1} },
+        { at:9, name:"Superviviente", text:"Al desbloquear: gana 1 Atium.", eff:{atium:1} }
+      ] },
+      { id:"vin", name:"Vin", metal:"Pewter", text:"Instinto de bruma: al quemar Peltre, +1 combate y +1 curación.", eff:{combat:1, heal:1}, training:[
+        { at:3, name:"Instinto", text:"Al desbloquear: +2 combate.", eff:{combat:2} },
+        { at:6, name:"Paso de bruma", text:"Al desbloquear: refresca 1 metal.", eff:{refreshAny:1} },
+        { at:9, name:"Ascenso", text:"Al desbloquear: gana 1 Atium.", eff:{atium:1} }
+      ] },
+      { id:"shan", name:"Shan Elariel", metal:"Brass", text:"Intriga noble: al quemar Latón, +1 misión y +1 moneda.", eff:{mission:1, coin:1}, training:[
+        { at:3, name:"Etiqueta letal", text:"Al desbloquear: +2 monedas.", eff:{coin:2} },
+        { at:6, name:"Doble juego", text:"Al desbloquear: elimina 1 carta propia.", eff:{trashOwn:1} },
+        { at:9, name:"Linaje noble", text:"Al desbloquear: +2 misión.", eff:{mission:2} }
+      ] },
+      { id:"marsh", name:"Marsh", metal:"Iron", text:"Ojo de la rebelión: al quemar Hierro, +2 combate.", eff:{combat:2}, training:[
+        { at:3, name:"Espía", text:"Al desbloquear: +1 misión.", eff:{mission:1} },
+        { at:6, name:"Tirón preciso", text:"Al desbloquear: recupera 1 carta del descarte.", eff:{pull:1} },
+        { at:9, name:"Infiltrado", text:"Al desbloquear: +3 combate.", eff:{combat:3} }
+      ] }
+    ];
+
+    const cardBase = [
+      { id:"sense", name:"Sentir la bruma", type:"action", cost:3, pair:["Tin","Pewter"], need:"Tin", text:"+2 misión. Si quemaste Estaño extra, +1 moneda.", eff:{mission:2}, extraNeed:"Tin", extra:{coin:1} },
+      { id:"brace", name:"Aguante de peltre", type:"action", cost:3, pair:["Tin","Pewter"], need:"Pewter", text:"+2 combate y +1 curación.", eff:{combat:2, heal:1} },
+      { id:"seek", name:"Buscar patrón", type:"action", cost:4, pair:["Bronze","Copper"], need:"Bronze", text:"+2 misión y roba 1 carta.", eff:{mission:2, draw:1} },
+      { id:"cloud", name:"Nube de cobre", type:"action", cost:4, pair:["Bronze","Copper"], need:"Copper", text:"+2 curación y refresca 1 metal.", eff:{heal:2, refreshAny:1} },
+      { id:"riot", name:"Alterar emociones", type:"action", cost:4, pair:["Zinc","Brass"], need:"Zinc", text:"+3 monedas.", eff:{coin:3} },
+      { id:"soothe", name:"Aplacar", type:"action", cost:4, pair:["Zinc","Brass"], need:"Brass", text:"+1 moneda y elimina una carta propia.", eff:{coin:1, trashOwn:1} },
+      { id:"pull", name:"Tirar de metal", type:"action", cost:3, pair:["Iron","Steel"], need:"Iron", text:"+2 combate y recupera una carta del descarte al mazo.", eff:{combat:2, pull:1} },
+      { id:"push", name:"Empujar monedas", type:"action", cost:5, pair:["Iron","Steel"], need:"Steel", text:"+3 combate. Puedes eliminar una carta del mercado.", eff:{combat:3, trashMarket:1} },
+      { id:"train", name:"Lección secreta", type:"action", cost:5, pair:["Bronze","Copper"], need:"Bronze", text:"+1 entrenamiento y +1 misión.", eff:{train:1, mission:1} },
+      { id:"cache", name:"Alijo noble", type:"action", cost:5, pair:["Zinc","Brass"], need:"Zinc", text:"+4 monedas.", eff:{coin:4} },
+      { id:"duel", name:"Duelo en los tejados", type:"action", cost:6, pair:["Iron","Steel"], need:"Steel", text:"+5 combate.", eff:{combat:5} },
+      { id:"survive", name:"Sobrevivir", type:"action", cost:6, pair:["Tin","Pewter"], need:"Pewter", text:"+3 curación y +2 combate.", eff:{heal:3, combat:2} },
+      { id:"atiumVision", name:"Visión de atium", type:"action", cost:7, pair:["Atium","Atium"], need:"Atium", text:"+3 misión, +3 combate, roba 1.", eff:{mission:3, combat:3, draw:1} },
+      { id:"confront", name:"Confrontación", type:"action", cost:8, pair:["Atium","Atium"], need:"Atium", text:"+2 misión. Si juegas 4 Atium en esta carta, ganas.", eff:{mission:2}, confrontation:true },
+      { id:"guard", name:"Guardia contratado", type:"ally", cost:3, defense:3, metal:"Pewter", text:"Aliado defensor. Si quemas Peltre: +1 combate.", eff:{combat:1}, defender:true },
+      { id:"informant", name:"Informante skaa", type:"ally", cost:3, defense:2, metal:"Tin", text:"Si quemas Estaño: +1 misión.", eff:{mission:1} },
+      { id:"broker", name:"Cambista", type:"ally", cost:4, defense:2, metal:"Zinc", text:"Si quemas Zinc: +1 moneda.", eff:{coin:1} },
+      { id:"smoker", name:"Ahumador", type:"ally", cost:4, defense:3, metal:"Copper", text:"Si quemas Cobre: +1 curación.", eff:{heal:1} },
+      { id:"thug", name:"Matón", type:"ally", cost:5, defense:4, metal:"Iron", text:"Si quemas Hierro: +2 combate.", eff:{combat:2} },
+      { id:"obligator", name:"Obligador corrupto", type:"ally", cost:5, defense:3, metal:"Brass", text:"Si quemas Latón: +1 moneda y +1 misión.", eff:{coin:1, mission:1} }
+    ];
+
+    const starters = [
+      { id:"funding", name:"Fondos", type:"funding", cost:0, text:"+1 moneda.", eff:{coin:1} },
+      { id:"tinTrain", name:"Entrenamiento Estaño/Peltre", type:"action", cost:0, pair:["Tin","Pewter"], need:"Tin", text:"+1 misión o úsala como Estaño/Peltre.", eff:{mission:1}, starter:true },
+      { id:"bronzeTrain", name:"Entrenamiento Bronce/Cobre", type:"action", cost:0, pair:["Bronze","Copper"], need:"Bronze", text:"+1 misión o refresca 1 metal.", eff:{mission:1, refreshAny:1}, starter:true },
+      { id:"zincTrain", name:"Entrenamiento Zinc/Latón", type:"action", cost:0, pair:["Zinc","Brass"], need:"Zinc", text:"+1 moneda.", eff:{coin:1}, starter:true },
+      { id:"ironTrain", name:"Entrenamiento Hierro/Acero", type:"action", cost:0, pair:["Iron","Steel"], need:"Iron", text:"+1 combate.", eff:{combat:1}, starter:true }
+    ];
+
+    const missions = [
+      { name:"Derrocar casas nobles", rewards:{4:{coin:2},8:{train:1},12:{atium:1}} },
+      { name:"Controlar Luthadel", rewards:{4:{heal:2},8:{coin:3},12:{burn:1}} },
+      { name:"Robar el alijo", rewards:{4:{coin:2},8:{atium:1},12:{draw:2}} },
+      { name:"Proteger a los skaa", rewards:{4:{heal:3},8:{mission:1},12:{train:1}} },
+      { name:"Cazar inquisidores", rewards:{4:{combat:2},8:{atium:1},12:{combat:4}} },
+      { name:"Dominar la corte", rewards:{4:{coin:1},8:{trashOwn:1},12:{burn:1}} },
+      { name:"Espiar al Lord Legislador", rewards:{4:{draw:1},8:{coin:2},12:{atium:2}} },
+      { name:"Reunir la rebelion", rewards:{4:{mission:1},8:{heal:2},12:{train:1}} }
+    ];
+
+    const lordDeck = [
+      { type:"edict", name:"Edicto: Diezmo imperial", text:"Dominancia +1. Cada rebelde pierde 1 moneda guardada o sufre X daño.", dominanceUp:1, taxX:true },
+      { type:"edict", name:"Edicto: Ceniza y acero", text:"Dominancia +1. Daño colectivo igual a X por jugador.", dominanceUp:1, collectiveX:true },
+      { type:"edict", name:"Edicto: Purga del mercado", text:"Dominancia +1. Elimina 2 cartas del mercado.", dominanceUp:1, marketClear:2 },
+      { type:"edict", name:"Edicto: Decreto inmortal", text:"Dominancia +2. El Lord se cura 10 por cada misión incompleta.", dominanceUp:2, healPerIncomplete:10 },
+      { type:"edict", name:"Edicto: Red de obligadores", text:"Dominancia +1. El jugador activo descarta 1 carta al azar.", dominanceUp:1, discard:1 },
+      { type:"edict", name:"Edicto: Toque del Lord", text:"Dominancia +1. El jugador activo sufre X + 2 daño.", dominanceUp:1, activeDamageX:2 },
+      { type:"adversary", name:"Inquisidor de acero", text:"Al final de tu turno: sufres X daño.", shields:["X",4,5], effect:{activeDamageX:0} },
+      { type:"adversary", name:"Obligador imperial", text:"Al final de tu turno: Dominancia +1.", shields:[3,"X"], effect:{dominanceUp:1} },
+      { type:"adversary", name:"Patrulla koloss", text:"Al final de tu turno: sufres 3 daño.", shields:[4,4], effect:{activeDamage:3} },
+      { type:"adversary", name:"Noble colaborador", text:"Al final de tu turno: elimina la carta mas barata del mercado.", shields:[2,"X"], effect:{marketClear:1} },
+      { type:"adversary", name:"Espía del Cantón", text:"Al final de tu turno: descarta 1 carta al azar.", shields:[2,3], effect:{discard:1} },
+      { type:"adversary", name:"Guardia de Kredik Shaw", text:"Al final de tu turno: el Lord se cura X.", shields:["X","X"], effect:{healLordX:0} }
+    ];
+    const dominanceTrack = [
+      { value:1, text:"Dominancia inicial." },
+      { value:2, text:"Ataque imperial: el jugador activo sufre 2 daño.", activeDamage:2 },
+      { value:3, text:"Redada: todos sufren 2 daño.", damageAll:2 },
+      { value:4, text:"Control del mercado: elimina la carta más barata.", marketClear:1 },
+      { value:5, text:"Represión: el jugador activo sufre X daño.", activeDamageX:0 },
+      { value:6, text:"Dominio absoluto: todos sufren X daño.", damageAllX:0 }
+    ];
+
+    function clone(x){ return JSON.parse(JSON.stringify(x)); }
+    function shuffle(a){
+      for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+      return a;
+    }
+    function makeCard(base){ const c=clone(base); c.uid = Math.random().toString(36).slice(2,10); c.activated=false; c.asMetal=false; return c; }
+    function toast(text){ $("toast").textContent=text; $("toast").style.display="block"; setTimeout(()=>$("toast").style.display="none",1800); }
+    function log(text){ state.log.unshift(text); state.log = state.log.slice(0,80); }
+    function visual(kind, text){
+      const layer = $("fxLayer");
+      if(!layer) return;
+      const el = document.createElement("div");
+      el.className = `fxBurst ${kind || ""}`;
+      el.textContent = text;
+      layer.appendChild(el);
+      setTimeout(() => el.remove(), 950);
+    }
+    function flashZone(id){
+      setTimeout(() => {
+        const el = $(id);
+        if(!el) return;
+        el.classList.remove("flash");
+        void el.offsetWidth;
+        el.classList.add("flash");
+        setTimeout(() => el.classList.remove("flash"), 560);
+      }, 40);
+    }
+
+    async function api(path, opts={}){
+      const res = await fetch(path, opts);
+      if(!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    async function poll(){
+      if(!room) return;
+      try {
+        const snap = await api(`/api/poll?room=${encodeURIComponent(room)}&id=${encodeURIComponent(clientId)}`);
+        $("dot").classList.add("on"); $("conn").textContent = "conectado";
+        presence = snap.players || [];
+        if(JSON.stringify(snap.state) !== JSON.stringify(state)){
+          suppressSend = true;
+          state = snap.state;
+          suppressSend = false;
+        }
+        renderChat(snap.chat || []);
+        render();
+      } catch (e) {
+        $("dot").classList.remove("on"); $("conn").textContent = "desconectado";
+      }
+    }
+
+    async function sendState(){
+      if(suppressSend || !room) return;
+      await api(`/api/state?room=${encodeURIComponent(room)}`, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(state)
+      });
+      render();
+    }
+
+    async function join(){
+      room = ($("roomInput").value || "BRUMA").trim().toUpperCase();
+      const name = ($("nameInput").value || "Jugador").trim();
+      localStorage.playerName = name;
+      localStorage.room = room;
+      const data = await api(`/api/join?room=${encodeURIComponent(room)}&name=${encodeURIComponent(name)}&id=${encodeURIComponent(clientId)}`);
+      clientId = data.clientId;
+      sessionStorage.clientId = clientId;
+      presence = data.snapshot.players || [];
+      state = data.snapshot.state;
+      $("identity").textContent = `${name} en ${room}`;
+      render();
+    }
+
+    function newGame(){
+      const ps = presence.slice(0,4);
+      if(ps.length === 0){ toast("Entra en una sala primero."); return; }
+      const mode = $("modeInput").value;
+      const marketDeck = shuffle([...Array(4)].flatMap(()=>cardBase.map(makeCard)));
+      const market = marketDeck.splice(0,6);
+      const chosenMissions = shuffle(clone(missions)).slice(0,3).map(m => ({...m, pos:{}, finished:[]}));
+      const players = ps.map((p, i) => {
+        const character = clone(characters[i % characters.length]);
+        const deck = shuffle([
+          ...Array(6).fill(0).map(()=>makeCard(starters[0])),
+          makeCard(starters[1]), makeCard(starters[2]), makeCard(starters[3]), makeCard(starters[4])
+        ]);
+        const pl = {
+          id:p.id, name:p.name, character, color:COLORS[i], health:mode === "lord" ? 36 : 36 + (i===1 ? 2 : i>1 ? 4 : 0),
+          deck, hand:[], discard:[], play:[], allies:[], boxings:i===3 ? 1 : 0, atium:0,
+          adversaries:[],
+          training:0, burnBonus:0, dead:false, metals:Object.fromEntries(METALS.map(m=>[m,{used:false,flared:false}])),
+          turn:{coin:0,combat:0,mission:0,burned:[],burnCount:0,metalPool:{},allyTriggered:[],characterTriggered:false,refreshAny:0,trashOwn:0,trashMarket:0,pull:0,confrontAtium:0}
+        };
+        draw(pl,5);
+        return pl;
+      });
+      state = {
+        id:Date.now(), mode, started:false, players, marketDeck, market, missions:chosenMissions,
+        eliminated:[], current:0, target:mode === "duel" && players.length > 2 ? players[players.length-1].id : null,
+        lord: mode === "lord" ? { health:48, maxHealth:48, dominance:1, maxDominance:6, deck:shuffle([...Array(3)].flatMap(()=>clone(lordDeck))), discard:[] } : null,
+        log:["Partida creada."], winner:null
+      };
+      for(const m of state.missions){ for(const p of players) m.pos[p.id]=0; }
+      sendState();
+    }
+
+    function startGame(){
+      if(!state){ newGame(); }
+      if(!state) return;
+      state.started = true;
+      beginTurn(activePlayer(), true);
+      log("Empieza la partida.");
+      sendState();
+    }
+    function leaveGame(){
+      if(!state || !clientId) return;
+      const idx = state.players.findIndex(p => p.id === clientId);
+      if(idx < 0) return;
+      const leaving = state.players[idx];
+      state.players.splice(idx, 1);
+      for(const m of state.missions || []) delete m.pos[clientId];
+      if(state.players.length === 0){
+        state = null;
+      } else {
+        if(state.current >= state.players.length) state.current = 0;
+        if(state.target === clientId) state.target = state.players.find(p => !p.dead)?.id || null;
+        log(`${leaving.name} abandona la partida.`);
+      }
+      sendState();
+    }
+
+    function activePlayer(){ return state?.players[state.current]; }
+    function me(){ return state?.players.find(p=>p.id===clientId); }
+    function viewedPlayer(){ return state?.players.find(p=>p.id===viewedPlayerId) || me() || activePlayer(); }
+    function isMyTurn(){ return state?.started && activePlayer()?.id === clientId && !state.winner; }
+    let viewedPlayerId = null;
+    function switchView(id){ viewedPlayerId = id; render(); }
+    function burnLimit(p){ return 1 + p.burnBonus; }
+
+    function draw(p,n){
+      for(let i=0;i<n;i++){
+        if(p.deck.length===0 && p.discard.length>0){ p.deck = shuffle(p.discard.splice(0)); }
+        if(p.deck.length>0) p.hand.push(p.deck.pop());
+      }
+    }
+    function resetTurn(p){
+      p.turn = {coin:0,combat:0,mission:0,burned:[],burnCount:0,metalPool:{},allyTriggered:[],characterTriggered:false,refreshAny:0,trashOwn:0,trashMarket:0,pull:0,confrontAtium:0};
+      for(const m of METALS) p.metals[m].used = false;
+      for(const c of [...p.play, ...p.hand]) c.activated = false;
+    }
+    function beginTurn(p, first=false){
+      resetTurn(p);
+      train(p,1);
+      if(!first) log(`Turno de ${p.name}.`);
+    }
+    function train(p,n){
+      for(let i=0;i<n;i++){
+        const before = p.training;
+        p.training = Math.min(11, p.training + 1);
+        if([2,5,8].includes(p.training)) p.burnBonus++;
+        if([4,7].includes(p.training)) p.atium++;
+        if(p.training === 11) p.atium++;
+        unlockTrainingPerks(p, before, p.training);
+      }
+    }
+    function unlockTrainingPerks(p, before, after){
+      for(const perk of (p.character?.training || [])){
+        if(before < perk.at && after >= perk.at){
+          applyEffect(p, perk.eff);
+          log(`${p.name} desbloquea entrenamiento: ${perk.name}.`);
+        }
+      }
+    }
+
+    function playCard(uid){
+      if(!isMyTurn()) return;
+      const p = activePlayer();
+      const idx = p.hand.findIndex(c=>c.uid===uid);
+      if(idx < 0) return;
+      const c = p.hand.splice(idx,1)[0];
+      if(c.type === "funding"){
+        applyEffect(p,c.eff);
+        p.play.push(c);
+      } else if(c.type === "ally"){
+        p.allies.push(c);
+        flashZone("allies");
+      } else {
+        p.play.push(c);
+        flashZone("play");
+      }
+      log(`${p.name} juega ${c.name}.`);
+      visual("coin", c.type === "funding" ? "+ moneda" : "Carta preparada");
+      sendState();
+    }
+
+    function useAsMetal(uid){
+      if(!isMyTurn()) return;
+      const p = activePlayer();
+      const idx = p.hand.findIndex(c=>c.uid===uid);
+      if(idx < 0) return;
+      const c = p.hand.splice(idx,1)[0];
+      if(c.type !== "action") return;
+      c.asMetal = true;
+      p.play.push(c);
+      for(const m of c.pair || []) p.turn.metalPool[m] = (p.turn.metalPool[m] || 0) + 1;
+      for(const m of c.pair || []) noteBurn(p,m);
+      log(`${p.name} usa ${c.name} como metal.`);
+      flashZone("play");
+      sendState();
+    }
+    function preparedAsMetal(uid){
+      if(!isMyTurn()) return;
+      const p = activePlayer();
+      const c = p.play.find(x=>x.uid===uid);
+      if(!c || c.type !== "action" || c.activated || c.asMetal) return;
+      c.asMetal = true;
+      for(const m of c.pair || []) p.turn.metalPool[m] = (p.turn.metalPool[m] || 0) + 1;
+      for(const m of c.pair || []) noteBurn(p,m);
+      log(`${p.name} convierte ${c.name} en metal.`);
+      flashZone("play");
+      sendState();
+    }
+    function unprepareCard(uid){
+      if(!isMyTurn()) return;
+      const p = activePlayer();
+      const idx = p.play.findIndex(c=>c.uid===uid);
+      if(idx < 0) return;
+      const c = p.play[idx];
+      if(c.type !== "action" || c.activated || c.asMetal) return;
+      p.hand.push(p.play.splice(idx,1)[0]);
+      log(`${p.name} retira ${c.name} de preparación.`);
+      flashZone("hand");
+      sendState();
+    }
+
+    function activate(uid, mode="normal"){
+      if(!isMyTurn()) return;
+      const p = activePlayer();
+      const c = p.play.find(x=>x.uid===uid);
+      if(!c || c.activated || c.asMetal) return;
+      if(!payMetal(p, c.need, mode)) return;
+      c.activated = true;
+      applyEffect(p,c.eff);
+      if(c.confrontation && p.turn.confrontAtium >= 4) state.winner = p.name;
+      log(`${p.name} activa ${c.name} con ${c.need}.`);
+      visual(c.eff?.combat ? "combat" : c.eff?.mission ? "mission" : c.eff?.coin ? "coin" : "", c.name);
+      sendState();
+    }
+
+    function payMetal(p, metal, mode){
+      if(metal === "Atium"){
+        if(p.atium < 1){ toast("Necesitas Atium."); return false; }
+        p.atium--; p.turn.confrontAtium++; noteBurn(p,"Atium"); return true;
+      }
+      if((p.turn.metalPool[metal] || 0) > 0){
+        p.turn.metalPool[metal]--; noteBurn(p,metal); return true;
+      }
+      if(mode === "atium"){
+        if(p.atium < 1){ toast("No tienes Atium."); return false; }
+        p.atium--; noteBurn(p,metal); noteBurn(p,"Atium"); return true;
+      }
+      const token = p.metals[metal];
+      if(!token || token.used || token.flared){ toast("Ese metal no esta disponible."); return false; }
+      if(mode === "flare") token.flared = true;
+      else if(p.turn.burnCount >= burnLimit(p)){ toast("Has alcanzado tu limite de quemar. Usa flare."); return false; }
+      else p.turn.burnCount++;
+      token.used = true;
+      noteBurn(p,metal);
+      return true;
+    }
+    function canPayMetal(p, metal, mode){
+      if(!p || !metal) return false;
+      if(metal === "Atium") return p.atium > 0;
+      if(mode === "atium") return p.atium > 0;
+      if((p.turn.metalPool[metal] || 0) > 0) return true;
+      const token = p.metals[metal];
+      if(!token || token.used || token.flared) return false;
+      if(mode === "flare") return true;
+      return p.turn.burnCount < burnLimit(p);
+    }
+
+    function noteBurn(p, metal){
+      p.turn.burned.push(metal);
+      triggerAllies(p, metal);
+      triggerCharacter(p, metal);
+    }
+    function triggerAllies(p, metal){
+      for(const a of p.allies){
+        if(a.metal === metal && !p.turn.allyTriggered.includes(a.uid)){
+          p.turn.allyTriggered.push(a.uid);
+          applyEffect(p,a.eff);
+        }
+      }
+    }
+    function triggerCharacter(p, metal){
+      if(!p.character || p.turn.characterTriggered) return;
+      if(p.character.metal === metal || metal === "Atium"){
+        p.turn.characterTriggered = true;
+        applyEffect(p, p.character.eff);
+        log(`${p.name} activa a ${p.character.name}.`);
+      }
+    }
+
+    function applyEffect(p, eff={}){
+      p.turn.coin += eff.coin || 0;
+      p.turn.combat += eff.combat || 0;
+      p.turn.mission += eff.mission || 0;
+      p.health = Math.min(40, p.health + (eff.heal || 0));
+      p.turn.refreshAny += eff.refreshAny || 0;
+      p.turn.trashOwn += eff.trashOwn || 0;
+      p.turn.trashMarket += eff.trashMarket || 0;
+      p.turn.pull += eff.pull || 0;
+      if(eff.train) train(p, eff.train);
+      if(eff.draw) draw(p, eff.draw);
+      if(eff.atium) p.atium += eff.atium;
+      if(eff.burn) p.burnBonus += eff.burn;
+    }
+
+    function buy(i){
+      if(!isMyTurn()) return;
+      const p = activePlayer();
+      const c = state.market[i];
+      if(!c || p.turn.coin < c.cost) return;
+      p.turn.coin -= c.cost;
+      p.discard.push(c);
+      state.market[i] = state.marketDeck.pop() || null;
+      log(`${p.name} compra ${c.name}.`);
+      visual("coin", "Compra");
+      flashZone("discard");
+      sendState();
+    }
+    function buyBoxing(){
+      const p = activePlayer();
+      if(!isMyTurn() || p.turn.coin < 2) return;
+      p.turn.coin -= 2; p.boxings++; log(`${p.name} compra una moneda guardada.`); sendState();
+    }
+    function spendBoxing(){
+      const p = activePlayer();
+      if(!isMyTurn() || p.boxings < 1) return;
+      p.boxings--; p.turn.coin++; sendState();
+    }
+    function allocateMission(i){
+      const p = activePlayer();
+      if(!isMyTurn() || p.turn.mission < 1) return;
+      p.turn.mission--;
+      const m = state.missions[i];
+      const before = m.pos[p.id] || 0;
+      m.pos[p.id] = Math.min(12, before + 1);
+      for(const mark of [4,8,12]){
+        if(before < mark && m.pos[p.id] >= mark){
+          applyEffect(p, m.rewards[mark]);
+          log(`${p.name} recibe recompensa de ${m.name} (${mark}): ${effectSummary(m.rewards[mark])}.`);
+        }
+      }
+      if(m.pos[p.id] === 12 && !m.finished.includes(p.id)) m.finished.push(p.id);
+      checkWin();
+      visual("mission", "+ misión");
+      sendState();
+    }
+    function refreshMetal(metal){
+      const p = activePlayer();
+      if(!isMyTurn()) return;
+      if(p.turn.refreshAny < 1 || !p.metals[metal].flared) return;
+      p.metals[metal].flared = false; p.turn.refreshAny--; sendState();
+    }
+    function discardToRefresh(uid, metal){
+      const p = activePlayer();
+      if(!isMyTurn()) return;
+      const idx = p.hand.findIndex(c=>c.uid===uid);
+      if(idx < 0 || !p.metals[metal]?.flared) return;
+      const c = p.hand[idx];
+      if(!(c.pair || []).includes(metal) && !(c.pair || []).includes("Atium")) return;
+      p.discard.push(p.hand.splice(idx,1)[0]);
+      p.metals[metal].flared = false;
+      log(`${p.name} refresca ${metal}.`);
+      sendState();
+    }
+    function trashOwn(uid, zone){
+      const p = activePlayer();
+      if(!isMyTurn() || p.turn.trashOwn < 1) return;
+      const arr = p[zone];
+      const idx = arr.findIndex(c=>c.uid===uid);
+      if(idx < 0) return;
+      state.eliminated.push(arr.splice(idx,1)[0]); p.turn.trashOwn--; sendState();
+    }
+    function trashMarket(i){
+      const p = activePlayer();
+      if(!isMyTurn() || p.turn.trashMarket < 1) return;
+      const c = state.market[i];
+      if(!c) return;
+      state.eliminated.push(c);
+      state.market[i] = state.marketDeck.pop() || null;
+      p.turn.trashMarket--;
+      sendState();
+    }
+    function pullDiscard(uid){
+      const p = activePlayer();
+      if(!isMyTurn() || p.turn.pull < 1) return;
+      const idx = p.discard.findIndex(c=>c.uid===uid);
+      if(idx < 0) return;
+      p.deck.push(p.discard.splice(idx,1)[0]);
+      p.turn.pull--; sendState();
+    }
+    function attackPlayer(id){
+      const p = activePlayer();
+      if(id === "lord"){
+        if(!isMyTurn() || state.mode !== "lord" || p.turn.combat < 1) return;
+        const dmg = p.turn.combat;
+        p.turn.combat = 0;
+        state.lord.health = Math.max(0, state.lord.health - dmg);
+        log(`${p.name} hace ${dmg} dano al Lord Legislador.`);
+        visual("combat", `${dmg} daño`);
+        checkWin();
+        sendState();
+        return;
+      }
+      const target = state.players.find(x=>x.id===id);
+      if(!isMyTurn() || !target || target.dead || p.turn.combat < 1) return;
+      if(state.players.filter(x=>!x.dead).length > 2 && state.target !== id && state.target !== p.id){ toast("En 3-4 jugadores debes atacar al objetivo."); return; }
+      const dmg = p.turn.combat;
+      p.turn.combat = 0;
+      target.health -= dmg;
+      log(`${p.name} hace ${dmg} dano a ${target.name}.`);
+      visual("combat", `${dmg} daño`);
+      if(target.health <= 0){ target.dead = true; target.health = 0; log(`${target.name} queda eliminado.`); }
+      if(state.target === id && !target.dead) state.target = p.id;
+      checkWin();
+      sendState();
+    }
+    function attackAlly(pid, uid){
+      const p = activePlayer();
+      const owner = state.players.find(x=>x.id===pid);
+      const idx = owner?.allies.findIndex(a=>a.uid===uid) ?? -1;
+      if(!isMyTurn() || idx < 0) return;
+      const ally = owner.allies[idx];
+      if(p.turn.combat < ally.defense){ toast("No tienes combate suficiente para derrotar ese aliado."); return; }
+      p.turn.combat -= ally.defense;
+      owner.discard.push(owner.allies.splice(idx,1)[0]);
+      log(`${p.name} derrota a ${ally.name}.`);
+      sendState();
+    }
+    function attackAdversary(pid, index){
+      const p = activePlayer();
+      const owner = state.players.find(x=>x.id===pid);
+      const adv = owner?.adversaries?.[index];
+      if(!isMyTurn() || !adv || p.turn.combat < 1) return;
+      const shield = adv.shields[adv.hit || 0];
+      const cost = shield === "X" ? state.lord.dominance : shield;
+      if(p.turn.combat < cost){ toast(`Necesitas ${cost} combate para romper ese escudo.`); return; }
+      p.turn.combat -= cost;
+      adv.hit = (adv.hit || 0) + 1;
+      log(`${p.name} rompe un escudo de ${adv.name}.`);
+      if(adv.hit >= adv.shields.length){
+        owner.adversaries.splice(index,1);
+        state.lord.discard.push(adv);
+        log(`${adv.name} es derrotado.`);
+      }
+      sendState();
+    }
+    function endTurn(){
+      if(!isMyTurn()) return;
+      const p = activePlayer();
+      p.discard.push(...p.play.filter(c=>c.type !== "ally"));
+      p.play = [];
+      p.discard.push(...p.hand);
+      p.hand = [];
+      draw(p,5);
+      flashZone("discard");
+      flashZone("hand");
+      resetTurn(p);
+      if(state.mode === "lord" && !state.winner) lordPhase(p);
+      if(state.winner){ sendState(); return; }
+      let next = state.current;
+      do { next = (next + 1) % state.players.length; } while(state.players[next].dead);
+      state.current = next;
+      beginTurn(activePlayer());
+      sendState();
+    }
+    function lordPhase(p){
+      const lord = state.lord;
+      resolveAdversaries(p);
+      if(lord.deck.length === 0){ state.winner = "el Lord Legislador"; log("El mazo del Lord se agota. La rebelión fracasa."); return; }
+      const c = lord.deck.pop();
+      if(c.type === "adversary"){
+        c.hit = 0;
+        p.adversaries = p.adversaries || [];
+        p.adversaries.push(c);
+        log(`El Lord despliega adversario frente a ${p.name}: ${c.name}.`);
+      } else {
+        resolveEdict(c, p);
+        lord.discard.push(c);
+        log(`El Lord dicta ${c.name}.`);
+      }
+      checkWin();
+    }
+    function resolveAdversaries(p){
+      for(const adv of [...(p.adversaries || [])]){
+        const e = adv.effect || {};
+        if(e.activeDamage) damagePlayer(p, e.activeDamage);
+        if(e.activeDamageX !== undefined) damagePlayer(p, state.lord.dominance + e.activeDamageX);
+        if(e.dominanceUp) moveDominance(e.dominanceUp, p);
+        if(e.marketClear) clearMarket(e.marketClear);
+        if(e.discard && p.hand.length > 0) p.discard.push(p.hand.splice(Math.floor(Math.random()*p.hand.length),1)[0]);
+        if(e.healLordX !== undefined) state.lord.health = Math.min(state.lord.maxHealth, state.lord.health + state.lord.dominance + e.healLordX);
+        log(`${adv.name} aplica su efecto sobre ${p.name}.`);
+      }
+    }
+    function resolveEdict(c, p){
+      if(c.dominanceUp) moveDominance(c.dominanceUp, p);
+      if(c.taxX) for(const pl of state.players.filter(x=>!x.dead)){
+        if(pl.boxings > 0) pl.boxings--; else damagePlayer(pl, state.lord.dominance);
+      }
+      if(c.collectiveX) collectiveDamage(state.lord.dominance * state.players.filter(x=>!x.dead).length);
+      if(c.marketClear) clearMarket(c.marketClear);
+      if(c.healPerIncomplete){
+        const incomplete = state.missions.filter(m => !state.players.some(pl => (m.pos[pl.id] || 0) >= 12)).length;
+        state.lord.health = Math.min(state.lord.maxHealth, state.lord.health + incomplete * c.healPerIncomplete);
+      }
+      if(c.discard && p.hand.length > 0) p.discard.push(p.hand.splice(Math.floor(Math.random()*p.hand.length),1)[0]);
+      if(c.activeDamageX !== undefined) damagePlayer(p, state.lord.dominance + c.activeDamageX);
+    }
+    function moveDominance(steps, p){
+      for(let i=0;i<steps;i++){
+        if(state.lord.dominance >= state.lord.maxDominance) continue;
+        state.lord.dominance++;
+        const effect = dominanceTrack[state.lord.dominance - 1];
+        log(`Dominancia ${state.lord.dominance}: ${effect.text}`);
+        if(effect.activeDamage) damagePlayer(p, effect.activeDamage);
+        if(effect.damageAll) for(const pl of state.players.filter(x=>!x.dead)) damagePlayer(pl, effect.damageAll);
+        if(effect.marketClear) clearMarket(effect.marketClear);
+        if(effect.activeDamageX !== undefined) damagePlayer(p, state.lord.dominance + effect.activeDamageX);
+        if(effect.damageAllX !== undefined) for(const pl of state.players.filter(x=>!x.dead)) damagePlayer(pl, state.lord.dominance + effect.damageAllX);
+      }
+    }
+    function clearMarket(n){
+      for(let k=0;k<n;k++){
+        let cheapest = -1;
+        state.market.forEach((mc,i)=>{ if(mc && (cheapest < 0 || mc.cost < state.market[cheapest].cost)) cheapest = i; });
+        if(cheapest >= 0){ state.eliminated.push(state.market[cheapest]); state.market[cheapest] = state.marketDeck.pop() || null; }
+      }
+    }
+    function collectiveDamage(amount){
+      const alive = state.players.filter(x=>!x.dead);
+      if(alive.length === 0) return;
+      damagePlayer(alive[0], amount);
+    }
+    function damagePlayer(pl, dmg){
+      pl.health -= dmg;
+      if(pl.health <= 0){ pl.health = 0; pl.dead = true; log(`${pl.name} cae ante el Imperio.`); }
+    }
+    function checkWin(){
+      if(state.mode === "lord"){
+        if(state.players.some(p => state.missions.every(m => (m.pos[p.id] || 0) >= 12))) state.winner = "la rebelion";
+        if(state.lord.health <= 0) state.winner = "la rebelion";
+        if(state.players.every(p=>p.dead)) state.winner = "el Lord Legislador";
+        return;
+      }
+      for(const p of state.players){
+        if(state.missions.every(m => (m.pos[p.id] || 0) >= 12)) state.winner = p.name;
+      }
+      const alive = state.players.filter(p=>!p.dead);
+      if(alive.length === 1 && state.players.length > 1) state.winner = alive[0].name;
+      if(alive.length <= 2) state.target = null;
+    }
+
+    function render(){
+      document.body.classList.toggle("emptyMode", !state);
+      // Only set roomInput if it's empty (don't override user typing)
+      if(!$("roomInput").value) $("roomInput").value = localStorage.room || "BRUMA";
+      $("players").innerHTML = presence.map(p=>`<div class="player">${esc(p.name)} <span class="tiny">${p.id===clientId?"(tu)":""}</span></div>`).join("");
+      if(!state){ renderEmptyState(); return; }
+      document.body.classList.remove("emptyMode");
+      document.querySelector(".layout > section.panel")?.classList.remove("emptyBoard");
+      const oldHeroWrap = document.getElementById("emptyHeroWrap");
+      if(oldHeroWrap) oldHeroWrap.remove();
+      const p = me(), active = activePlayer();
+      // Default viewedPlayerId: stay on current viewed player if still valid, else show self (or active)
+      if(!viewedPlayerId || !state.players.find(pl=>pl.id===viewedPlayerId)){
+        viewedPlayerId = clientId || active?.id;
+      }
+      $("modeInput").value = state.mode || "duel";
+      $("turnTitle").textContent = state.winner ? `Victoria: ${state.winner}` : `Turno de ${active?.name || "-"}`;
+      $("turnInfo").textContent = state.started ? (isMyTurn() ? "Es tu turno." : "Esperando al jugador activo.") : "Partida preparada, pulsa Empezar.";
+      $("resources").innerHTML = p ? resourceChips(p) : "";
+
+      // Player view tabs
+      const vp = viewedPlayer();
+      let tabsHtml = `<div id="playerTabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;align-items:center">
+        <span style="font-size:11px;color:#b7b0a4;margin-right:2px">Ver tablero:</span>`;
+      for(const pl of state.players){
+        const isActive = pl.id === active?.id;
+        const isViewed = pl.id === viewedPlayerId;
+        const isMe = pl.id === clientId;
+        tabsHtml += `<button onclick="switchView('${pl.id}')" style="
+          padding:4px 10px;font-size:12px;border-radius:999px;
+          background:${isViewed ? pl.color : 'rgba(255,255,255,.07)'};
+          border:2px solid ${isActive ? pl.color : isViewed ? pl.color : 'rgba(255,255,255,.15)'};
+          color:${isViewed ? '#fff' : '#ccc'};
+          font-weight:${isViewed?'700':'400'};
+          opacity:${pl.dead?'.45':'1'}
+        ">${esc(pl.name)}${isMe?" (tú)":""}${isActive?" ▶":""}</button>`;
+      }
+      tabsHtml += `</div>`;
+
+      // Banner when viewing someone else
+      const viewingBanner = vp && vp.id !== clientId
+        ? `<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;margin-bottom:6px;border-radius:8px;background:rgba(255,255,255,.06);border:1px solid ${vp.color};color:${vp.color};font-size:12px;font-weight:700">
+            👁 Viendo el tablero de <span style="margin-left:4px">${esc(vp.name)}</span>
+            ${me() ? `<button onclick="switchView('${clientId}')" style="margin-left:auto;font-size:11px;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;cursor:pointer">Volver a mi tablero</button>` : ""}
+          </div>`
+        : "";
+
+      // Inject tabs + banner above the board zones
+      let tabContainer = document.getElementById("viewTabsContainer");
+      if(!tabContainer){
+        tabContainer = document.createElement("div");
+        tabContainer.id = "viewTabsContainer";
+        const sectionPanel = document.querySelector(".layout > section.panel");
+        const boardZones = sectionPanel?.querySelector(".boardZones");
+        if(boardZones) sectionPanel.insertBefore(tabContainer, boardZones);
+      }
+      tabContainer.innerHTML = tabsHtml + viewingBanner;
+      renderLord();
+      renderPlayers(); renderMissions(); renderMetals(); renderCards(); renderActions();
+      $("log").innerHTML = state.log.map(esc).map(x=>`<div>${x}</div>`).join("");
+      renderLegend();
+    }
+    function renderEmptyState(){
+      document.body.classList.add("emptyMode");
+      document.querySelector(".layout > section.panel")?.classList.add("emptyBoard");
+      $("turnTitle").textContent = "Sin partida";
+      $("turnInfo").textContent = "Entra en una sala y crea una partida.";
+      $("resources").innerHTML = "";
+      $("lordPanel").innerHTML = "Elige modo y crea una partida.";
+      $("missions").innerHTML = "";
+      $("metals").innerHTML = "";
+      $("market").innerHTML = "";
+      $("handCards").innerHTML = "";
+      $("playCards").innerHTML = "";
+      $("allyCards").innerHTML = "";
+      $("discardCards").innerHTML = "";
+      $("trashCards").innerHTML = "";
+      $("deckStack").innerHTML = "";
+      $("deckCount").textContent = "0";
+      $("handCount").textContent = "0";
+      $("playCount").textContent = "0";
+      $("allyCount").textContent = "0";
+      $("discardCount").textContent = "0";
+      $("trashCount").textContent = "0";
+      $("actions").innerHTML = "";
+      $("legend").innerHTML = "";
+      $("log").innerHTML = "";
+
+      // If hero already exists, just update the dynamic parts (player list) without destroying the form
+      const existingWrap = document.getElementById("emptyHeroWrap");
+      if(existingWrap){
+        const playerListEl = document.getElementById("emptyPlayerList");
+        if(playerListEl){
+          playerListEl.innerHTML = presence.length
+            ? presence.map(p=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(255,255,255,.06);border-radius:6px;border:1px solid rgba(255,255,255,.1)"><span style="width:8px;height:8px;border-radius:50%;background:#55c979;flex-shrink:0"></span><span style="font-size:13px">${esc(p.name)}</span>${p.id===clientId?'<span style="font-size:10px;color:#b7b0a4;margin-left:auto">(tú)</span>':''}</div>`).join("")
+            : '<div class="tiny" style="padding:8px 0">Aún no hay jugadores. Entra primero en la sala.</div>';
+        }
+        return;
+      }
+
+      // Build hero from scratch only on first render
+      const heroWrap = document.createElement("div");
+      heroWrap.id = "emptyHeroWrap";
+      heroWrap.innerHTML = `<div class="emptyHero">
+        <div>
+          <h2>Nacidos de la Bruma</h2>
+          <p>Construye tu mazo, quema metales y decide si la rebelión sobrevive a la noche. Entra en una sala y crea la partida desde esta mesa.</p>
+          <div class="emptyForm">
+            <div style="grid-column:1/-1;display:grid;gap:4px">
+              <label style="font-size:11px;color:#b7b0a4;text-transform:uppercase;letter-spacing:.05em">Tu nombre</label>
+              <input id="emptyNameInput" placeholder="Nombre" value="${esc(localStorage.playerName || $("nameInput").value || "")}">
+            </div>
+            <div style="grid-column:1/-1;display:grid;gap:4px">
+              <label style="font-size:11px;color:#b7b0a4;text-transform:uppercase;letter-spacing:.05em">Sala</label>
+              <input id="emptyRoomInput" placeholder="Sala" value="${esc(room || "BRUMA")}">
+            </div>
+            <div style="grid-column:1/-1;display:grid;gap:4px">
+              <label style="font-size:11px;color:#b7b0a4;text-transform:uppercase;letter-spacing:.05em">Modo de juego</label>
+              <select id="emptyModeInput">
+                <option value="duel" ${$("modeInput").value === "duel" ? "selected" : ""}>Competitivo</option>
+                <option value="lord" ${$("modeInput").value === "lord" ? "selected" : ""}>Lord Legislador</option>
+              </select>
+            </div>
+            <button class="primary wide" onclick="emptyJoin()">Entrar en sala</button>
+            <button class="primary wide" onclick="emptyCreate()">Crear partida</button>
+            <button class="wide" onclick="window.open('rules.html','_blank','noopener')">Ver reglas</button>
+          </div>
+        </div>
+        <div class="emptyPanel">
+          <div class="emptyStat"><span>Sala</span><strong>${esc(room || "BRUMA")}</strong></div>
+          <div style="margin: 6px 0 4px; font-size:12px; color:#b7b0a4; font-weight:700; text-transform:uppercase; letter-spacing:.05em">Jugadores en sala</div>
+          <div id="emptyPlayerList" style="display:grid;gap:5px;margin-bottom:8px">
+            ${presence.length ? presence.map(p=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(255,255,255,.06);border-radius:6px;border:1px solid rgba(255,255,255,.1)"><span style="width:8px;height:8px;border-radius:50%;background:#55c979;flex-shrink:0"></span><span style="font-size:13px">${esc(p.name)}</span>${p.id===clientId?'<span style="font-size:10px;color:#b7b0a4;margin-left:auto">(tú)</span>':''}</div>`).join("") : '<div class="tiny" style="padding:8px 0">Aún no hay jugadores. Entra primero en la sala.</div>'}
+          </div>
+          ${presence.length > 0 && presence.length < 4 ? `<button style="width:100%;margin-bottom:8px;font-size:12px" onclick="addLocalPlayer()">+ Añadir jugador local (nueva pestaña)</button>` : ""}
+          <div class="emptyStat"><span>Modo elegido</span><strong>${$("modeInput").value === "lord" ? "Lord Legislador" : "Competitivo"}</strong></div>
+          <div class="tiny" style="margin-top:8px">Para jugar en red, comparte la URL y que cada jugador entre con su nombre a la misma sala.</div>
+        </div>
+      </div>`;
+      document.querySelector(".layout > section.panel")?.appendChild(heroWrap);
+    }
+    async function emptyJoin(){
+      const n = $("emptyNameInput")?.value || "Jugador";
+      const r = $("emptyRoomInput")?.value || "BRUMA";
+      const m = $("emptyModeInput")?.value || "duel";
+      $("nameInput").value = n;
+      $("roomInput").value = r;
+      $("modeInput").value = m;
+      await join();
+    }
+    async function emptyCreate(){
+      await emptyJoin();
+      newGame();
+    }
+    function addLocalPlayer(){
+      const r = $("emptyRoomInput")?.value || room || "BRUMA";
+      const names = ["Jugador2","Jugador3","Jugador4"];
+      // Pick a name not already in presence
+      const usedNames = presence.map(p=>p.name);
+      const nextName = names.find(n=>!usedNames.includes(n)) || "Jugador" + (presence.length+1);
+      const url = new URL(window.location.href);
+      url.searchParams.set("nombre", nextName);
+      url.searchParams.set("sala", r.toUpperCase());
+      window.open(url.toString(), "_blank");
+    }
+    function renderPlayers(){
+      $("players").innerHTML = state.players.map(p => `
+        <div class="player ${activePlayer()?.id===p.id?"active":""} ${p.dead?"dead":""}">
+          <div class="row between"><b style="color:${p.color}">${esc(p.name)}</b><span>${p.health}/40 ${state.target===p.id?"Objetivo":""}</span></div>
+          ${p.character ? `<div class="character"><img class="portrait" alt="" src="${characterArt(p.character)}"><div><b>${esc(p.character.name)}</b><div class="tiny">${esc(p.character.text)}</div></div></div>` : ""}
+          ${trainingHtml(p)}
+          <div class="bars"><div class="bar"><span style="width:${p.health/40*100}%"></span></div></div>
+          <div class="tiny">Mazo ${p.deck.length} | Mano ${p.hand.length} | Descarte ${p.discard.length} | Entreno ${p.training}/11 | Quemar ${burnLimit(p)}</div>
+          ${state.mode !== "lord" && isMyTurn() && p.id!==activePlayer().id && !p.dead ? `<button onclick="attackPlayer('${p.id}')">Atacar jugador</button>` : ""}
+          ${p.allies.map(a => `<button onclick="attackAlly('${p.id}','${a.uid}')">Atacar ${esc(a.name)} (${a.defense})</button>`).join(" ")}
+          ${renderAdversaries(p)}
+        </div>`).join("");
+    }
+    function renderAdversaries(p){
+      if(state.mode !== "lord" || !p.adversaries?.length) return "";
+      return `<div class="trainingPerks"><b class="tiny">Adversarios</b>${p.adversaries.map((a,i) => {
+        const next = a.shields[a.hit || 0];
+        const cost = next === "X" ? state.lord.dominance : next;
+        const shields = a.shields.map((s,idx)=> idx < (a.hit||0) ? "■" : (s === "X" ? `X(${state.lord.dominance})` : s)).join(" ");
+        return `<div class="player" style="margin-top:4px"><b>${esc(a.name)}</b><div class="tiny">${esc(a.text)}</div><div class="tiny">Escudos: ${shields}</div>${isMyTurn()?`<button onclick="attackAdversary('${p.id}',${i})">Romper escudo (${cost})</button>`:""}</div>`;
+      }).join("")}</div>`;
+    }
+    function trainingHtml(p){
+      const steps = Array.from({length:11}, (_,i) => `<span class="trainingStep ${p.training >= i+1 ? "on" : ""}"></span>`).join("");
+      const perks = (p.character?.training || []).map(perk =>
+        `<div class="perk ${p.training >= perk.at ? "on" : ""}">${p.training >= perk.at ? "✓" : "·"} ${perk.at}: ${esc(perk.name)} - ${esc(perk.text)}</div>`
+      ).join("");
+      return `<div class="tiny" style="margin-top:6px"><b>Entrenamiento</b> ${p.training}/11</div><div class="trainingLine">${steps}</div><div class="trainingPerks">${perks}</div>`;
+    }
+    function renderLord(){
+      if(state.mode !== "lord" || !state.lord){
+        $("lordPanel").innerHTML = "Modo competitivo.";
+        return;
+      }
+      const l = state.lord;
+      const currentDominance = dominanceTrack[l.dominance - 1] || dominanceTrack[0];
+      const nextDominance = dominanceTrack[l.dominance] || null;
+      $("lordPanel").innerHTML = `
+        <div class="row between"><b>Lord Legislador</b><span>${l.health}/${l.maxHealth}</span></div>
+        <div class="bar"><span style="width:${(l.health/l.maxHealth)*100}%;background:#c44d3d"></span></div>
+        <div class="row between" style="margin-top:6px"><span>Dominancia</span><span>${l.dominance}/${l.maxDominance}</span></div>
+        <div class="bar"><span style="width:${(l.dominance/l.maxDominance)*100}%;background:#d2a449"></span></div>
+        <div class="player" style="margin-top:8px;padding:7px">
+          <b>Efecto actual</b>
+          <div class="tiny">${esc(currentDominance.text)}</div>
+          ${nextDominance ? `<div class="tiny" style="margin-top:5px"><b>Siguiente:</b> ${esc(nextDominance.text)}</div>` : ""}
+        </div>
+        <div class="tiny" style="margin-top:6px">Mazo del Lord: ${l.deck.length} | Descarte: ${l.discard.length}</div>
+        ${isMyTurn() ? `<button style="margin-top:8px" onclick="attackPlayer('lord')">Atacar al Lord</button>` : ""}
+        <div class="tiny" style="margin-top:6px">Si el mazo del Lord se agota o todos caen, gana el Imperio. X = Dominancia actual.</div>`;
+    }
+    function renderMissions(){
+      $("missions").innerHTML = state.missions.map((m,i) => {
+        const rows = state.players.map(p => `<div class="tiny">${esc(p.name)}: ${m.pos[p.id] || 0}/12</div><div class="bar"><span style="width:${((m.pos[p.id]||0)/12)*100}%;background:${p.color}"></span></div>`).join("");
+        const rewardRows = [4,8,12].map(mark => `<span class="pill">${mark}: ${esc(effectSummary(m.rewards[mark]))}</span>`).join(" ");
+        return `<div class="player mission"><b>${esc(m.name)}</b>${rows}<div class="row" style="margin-top:6px">${rewardRows}</div>${isMyTurn() ? `<button onclick="allocateMission(${i})">Asignar 1 punto</button>` : ""}</div>`;
+      }).join("");
+    }
+    function renderMetals(){
+      const p = viewedPlayer();
+      if(!p){ $("metals").innerHTML = ""; return; }
+      const isMe = p.id === clientId;
+      $("metals").innerHTML = METALS.map(m => {
+        const x = p.metals[m];
+        const status = x.flared ? "Avivado: no disponible hasta refrescarlo." : x.used ? "Usado este turno." : "Disponible.";
+        return `<button class="metal ${x.used?"used":""} ${x.flared?"flared":""}" ${isMe?`onclick="refreshMetal('${m}')"`:'disabled'} title="${status}">${es(m)}</button>`;
+      }).join("");
+    }
+    function renderCards(){
+      const p = viewedPlayer();
+      $("market").innerHTML = state.market.map((c,i)=> c ? cardHtml(c, "market", i) : "").join("");
+      $("handCards").innerHTML = p ? p.hand.map(c=>cardHtml(c, p.id===clientId?"hand":"view")).join("") : "";
+      $("playCards").innerHTML = p ? p.play.map(c=>cardHtml(c, p.id===clientId?"play":"view")).join("") : "";
+      $("allyCards").innerHTML = p ? p.allies.map(c=>cardHtml(c, p.id===clientId?"allies":"view")).join("") : "";
+      $("discardCards").innerHTML = p ? p.discard.map(c=>cardHtml(c,"discard")).join("") : "";
+      $("trashCards").innerHTML = state.eliminated.map(c=>cardHtml(c,"trash")).join("");
+      $("deckStack").innerHTML = p ? deckStackHtml(p.deck.length) : "";
+      $("deckCount").textContent = p ? `${p.deck.length} carta${p.deck.length===1?"":"s"}` : "0";
+      $("handCount").textContent = p ? `${p.hand.length}` : "0";
+      $("playCount").textContent = p ? `${p.play.length}` : "0";
+      $("allyCount").textContent = p ? `${p.allies.length}` : "0";
+      $("discardCount").textContent = p ? `${p.discard.length}` : "0";
+      $("trashCount").textContent = `${state.eliminated.length}`;
+    }
+    function deckStackHtml(count){
+      const n = Math.min(6, Math.max(0, count));
+      const backs = Array.from({length:n}, (_,i) => {
+        const offset = i - Math.floor(n/2);
+        return `<div class="deckBack" style="transform:translate(${offset*3}px,${offset*-2}px) rotate(${offset*1.5}deg);z-index:${i}"></div>`;
+      }).join("");
+      return `${backs}<div class="deckMeta">${count} cartas</div>`;
+    }
+    function cardHtml(c, zone, i=0){
+      const klass = `card ${c.type} ${c.asMetal?"metaluse":""}`;
+      let mainButtons = "";
+      let vialAction = "";
+      if(zone==="hand" && isMyTurn()){
+        mainButtons += `<button onclick="playCard('${c.uid}')">${c.type === "action" ? "Preparar" : "Jugar"}</button>`;
+        if(c.type==="action") vialAction = `useAsMetal('${c.uid}')`;
+        for(const m of METALS) if(c.pair?.includes(m)) mainButtons += `<button onclick="discardToRefresh('${c.uid}','${m}')">Ref ${es(m)}</button>`;
+        if(activePlayer().turn.trashOwn>0) mainButtons += `<button class="danger" onclick="trashOwn('${c.uid}','hand')">Eliminar</button>`;
+      }
+      if(zone==="play" && isMyTurn() && c.type==="action" && !c.activated && !c.asMetal){
+        const p = activePlayer();
+        mainButtons += `<button onclick="activate('${c.uid}','normal')" ${canPayMetal(p,c.need,"normal") ? "" : "disabled"}>Quemar</button>`;
+        mainButtons += `<button onclick="activate('${c.uid}','flare')" ${canPayMetal(p,c.need,"flare") ? "" : "disabled"}>Forzar</button>`;
+        mainButtons += `<button onclick="activate('${c.uid}','atium')" ${canPayMetal(p,c.need,"atium") ? "" : "disabled"}>Atium</button>`;
+        mainButtons += `<button onclick="unprepareCard('${c.uid}')">Desprep.</button>`;
+        vialAction = `preparedAsMetal('${c.uid}')`;
+        if(activePlayer().turn.trashOwn>0) mainButtons += `<button class="danger" onclick="trashOwn('${c.uid}','play')">Eliminar</button>`;
+      }
+      if(zone==="market" && isMyTurn()){
+        mainButtons += `<button onclick="buy(${i})">Comprar</button>`;
+        if(activePlayer().turn.trashMarket>0) mainButtons += `<button class="danger" onclick="trashMarket(${i})">Empujar</button>`;
+      }
+      if(zone==="discard" && isMyTurn()){
+        if(activePlayer().turn.trashOwn>0) mainButtons += `<button class="danger" onclick="trashOwn('${c.uid}','discard')">Eliminar</button>`;
+        if(activePlayer().turn.pull>0) mainButtons += `<button onclick="pullDiscard('${c.uid}')">Al mazo</button>`;
+      }
+      const metalLabel = displayMetal(c);
+      const cost = zone === "market" || c.cost ? `<span class="costBadge">${c.cost || 0}</span>` : "";
+      return `<article class="${klass}">
+        <div class="titleBar">${esc(c.name)}${cost}</div>
+        <div class="artWrap">
+          <img class="art" alt="" src="${cardArt(c)}">
+          <span class="metalRibbon">${esc(metalLabel)}</span>
+          ${vialAction ? `<button class="vialChip" onclick="${vialAction}" title="Usar como vial de metal">${esc(shortVial(c.pair?.map(es).join("/") || "Metal"))}</button>` : ""}
+        </div>
+        <div class="cardBody">
+          <div class="meta">
+            <span class="tag">${es(c.type)}</span>${c.need?`<span class="tag">requiere ${es(c.need)}</span>`:""}${c.defense?`<span class="tag">def ${c.defense}</span>`:""}
+          </div>
+          <div class="icons">${effectIcons(c)}</div>
+          <div class="text">${esc(c.text || "")}</div>
+          ${powerInfo(c)}
+        </div>
+        <div class="actions">${cardControls(c, mainButtons)}</div>
+      </article>`;
+    }
+    function shortVial(label){
+      return String(label).split("/").map(x => x.trim().slice(0,2)).join("/");
+    }
+    function cardControls(c, mainButtons){
+      if(!mainButtons) return "";
+      return `<div class="cardControls">
+        <div class="mainControls">${mainButtons}</div>
+      </div>`;
+    }
+    function powerInfo(c){
+      if(c.type !== "action") return "";
+      const rows = [];
+      if(c.extraNeed && c.extra) rows.push(`<div class="powerRow"><strong>+ ${es(c.extraNeed)}</strong><span>${effectSummary(c.extra)}</span></div>`);
+      if(c.confrontation) rows.push(`<div class="powerRow"><strong>4 Atium</strong><span>victoria inmediata</span></div>`);
+      if(!rows.length && c.pair) rows.push(`<div class="powerRow"><strong>Vial</strong><span>${c.pair.map(es).join(" / ")}</span></div>`);
+      return `<div class="powerBox">${rows.join("")}</div>`;
+    }
+    function displayMetal(c){
+      if(c.need) return es(c.need);
+      if(c.metal) return es(c.metal);
+      if(c.pair) return c.pair.map(es).join("/");
+      if(c.type === "funding") return "Moneda";
+      return es(c.type);
+    }
+    function effectIcons(c){
+      const bits = [];
+      if(c.type === "funding") bits.push(iconWithCount("coin", 1));
+      if(c.type === "ally" && c.defender) bits.push(icon("defender", "Defensor"));
+      collectEffectIcons(bits, c.eff || {});
+      if(c.extra) collectEffectIcons(bits, c.extra);
+      if(c.extraNeed) bits.push(icon("slash", "Requiere otro metal"));
+      if(c.need) bits.push(icon("burn", `Quemar ${es(c.need)}`));
+      if(c.confrontation) bits.push(iconWithCount("atium", 4));
+      return bits.join("");
+    }
+    function collectEffectIcons(bits, eff){
+      if(eff.combat) bits.push(iconWithCount("combat", eff.combat));
+      if(eff.mission) bits.push(iconWithCount("mission", eff.mission));
+      if(eff.heal) bits.push(iconWithCount("heal", eff.heal));
+      if(eff.coin) bits.push(iconWithCount("coin", eff.coin));
+      if(eff.train) bits.push(iconWithCount("train", eff.train));
+      if(eff.draw) bits.push(iconWithCount("draw", eff.draw));
+      if(eff.refreshAny) bits.push(iconWithCount("refresh", eff.refreshAny));
+      if(eff.trashOwn || eff.trashMarket) bits.push(iconWithCount("trash", (eff.trashOwn || 0) + (eff.trashMarket || 0)));
+      if(eff.burn) bits.push(iconWithCount("burnExtra", eff.burn));
+      if(eff.atium) bits.push(iconWithCount("atium", eff.atium));
+      if(eff.dominance) bits.push(iconWithCount("dominance", eff.dominance));
+    }
+    function iconWithCount(kind, n){
+      return `${icon(kind)}${n && n !== 1 ? `<span class="icoText">x${n}</span>` : ""}`;
+    }
+    function icon(kind, title=""){
+      const svgs = {
+        train:`<path d="M5 16h14l-3-9H8z" fill="#222"/><path d="M7 16l-3 4M11 16l-1 4M15 16l1 4M19 16l3 4" stroke="#222" stroke-width="2" stroke-linecap="round"/><path d="M8 7h8l-1-4H9z" fill="#39464a"/>`,
+        combat:`<path d="M4 4l16 16M20 4L4 20" stroke="#a9252e" stroke-width="5" stroke-linecap="round"/><path d="M4 4l16 16M20 4L4 20" stroke="#301014" stroke-width="2" stroke-linecap="round"/>`,
+        mission:`<rect x="5" y="3" width="14" height="18" rx="2" fill="#eadcb1" stroke="#6b5940" stroke-width="2"/><path d="M8 7h8M8 11h8" stroke="#d2a449" stroke-width="1.5"/>`,
+        heal:`<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z" fill="#75b84a" stroke="#477431" stroke-width="1.5"/>`,
+        coin:`<circle cx="12" cy="12" r="9" fill="#c5a24f" stroke="#81651f" stroke-width="2"/><path d="M7 10c3-3 7-3 10 0" stroke="#ead384" stroke-width="2" fill="none"/>`,
+        burnExtra:`<path d="M12 3c3 4-1 5 3 8 1-3 4-2 4 2 0 5-3 8-7 8s-7-3-7-8c0-3 2-6 5-9-1 4 1 5 2 7 2-2-1-4 0-8z" fill="#f5f5f2" stroke="#333" stroke-width="1.5"/><path d="M12 14c2 2 1 5-1 6 4 0 5-5 1-6z" fill="#d2a449"/>`,
+        draw:`<path d="M4 14l8-8 8 8h-5v5H9v-5z" fill="#f4f4f4" stroke="#2b2b2b" stroke-width="2"/><path d="M6 20h12" stroke="#2b2b2b" stroke-width="2"/>`,
+        refresh:`<circle cx="12" cy="12" r="9" fill="#e8ece7" stroke="#5b6360" stroke-width="1.5"/><path d="M6 12h10" stroke="#66a74e" stroke-width="4" stroke-linecap="round"/><path d="M14 7l5 5-5 5z" fill="#222"/>`,
+        trash:`<path d="M4 16l5-5-5-5 4-4 5 5 5-5 4 4-5 5 5 5-4 4-5-5-5 5z" fill="#d72f36" stroke="#fff" stroke-width="2"/><path d="M3 21h18" stroke="#333" stroke-width="2"/>`,
+        dominance:`<path d="M12 3l8 8h-5v10H9V11H4z" fill="#4aa3d8" stroke="#1f5d82" stroke-width="1.7"/>`,
+        defender:`<path d="M12 3l8 4v5c0 5-3 8-8 10-5-2-8-5-8-10V7z" fill="#6f8f58" stroke="#324529" stroke-width="1.7"/>`,
+        slash:`<path d="M3 21L21 3" stroke="#842b2b" stroke-width="4" stroke-linecap="round"/><path d="M5 5h5v5H5zM14 14h5v5h-5z" fill="#eadcb1" stroke="#6b5940"/>`,
+        burn:`<path d="M12 4c4 5-2 6 3 10 1-3 4-2 4 2 0 4-3 6-7 6s-7-2-7-6c0-3 2-6 5-10-1 4 1 6 2 8 2-3-1-5 0-10z" fill="#3a3a3a" stroke="#111" stroke-width="1.5"/>`,
+        atium:`<circle cx="12" cy="12" r="9" fill="#f1edda" stroke="#8e8a68" stroke-width="2"/><path d="M8 15c2-6 6-6 8 0M9 9h.1M15 9h.1" stroke="#4f4b35" stroke-width="2" fill="none"/>`
+      };
+      return `<span class="ico" title="${esc(title || kind)}"><svg viewBox="0 0 24 24" aria-hidden="true">${svgs[kind] || svgs.mission}</svg></span>`;
+    }
+    function cardArt(c){
+      const metal = c.need || c.metal || (c.type === "funding" ? "Coin" : "Mist");
+      const palettes = {
+        Tin:["#d7dde5","#566879","#1d242b"], Pewter:["#d8d0c8","#80766d","#2c2927"],
+        Bronze:["#c99455","#6e4327","#20130c"], Copper:["#cf7c4b","#743829","#24100c"],
+        Zinc:["#d6cfd7","#7b607d","#271f2b"], Brass:["#ddbd63","#81651f","#211805"],
+        Iron:["#b9c0c5","#58616a","#191d22"], Steel:["#d7e3ee","#4e6f91","#121c28"],
+        Atium:["#f3f0df","#9e9a77","#242318"], Coin:["#e5c76b","#8b6a26","#241a08"], Mist:["#d7d7d1","#68706e","#171a1a"]
+      };
+      const p = palettes[metal] || palettes.Mist;
+      const symbol = c.type === "ally" ? "ALIADO" : es(metal).toUpperCase();
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 150">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${p[0]}"/><stop offset=".55" stop-color="${p[1]}"/><stop offset="1" stop-color="${p[2]}"/></linearGradient>
+          <filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".018" numOctaves="3"/><feColorMatrix type="saturate" values=".25"/><feBlend in="SourceGraphic" mode="multiply"/></filter>
+        </defs>
+        <rect width="320" height="150" fill="url(#g)"/>
+        <path d="M0 118 C55 87 94 143 145 111 S228 70 320 104 V150 H0Z" fill="rgba(0,0,0,.28)"/>
+        <circle cx="244" cy="45" r="32" fill="rgba(255,255,255,.18)"/>
+        <path d="M58 38 l28 54 l-56 0 z" fill="rgba(255,255,255,.28)" stroke="rgba(0,0,0,.25)" stroke-width="4"/>
+        <path d="M126 28 h75 l-18 76 h-75 z" fill="rgba(0,0,0,.22)" stroke="rgba(255,255,255,.16)" stroke-width="5"/>
+        <text x="160" y="128" text-anchor="middle" font-family="Segoe UI,Arial" font-size="14" font-weight="800" fill="rgba(255,255,255,.28)">${symbol}</text>
+        <rect width="320" height="150" fill="transparent" filter="url(#n)" opacity=".35"/>
+      </svg>`;
+      return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    }
+    function characterArt(ch){
+      const colors = {
+        kelsier:["#f0c66b","#3b3427","#151515"],
+        vin:["#b8d6f0","#27394b","#0d1118"],
+        shan:["#d9b3d8","#4c2e55","#160d18"],
+        marsh:["#c4c8c7","#49505a","#111315"]
+      }[ch.id] || ["#ddd","#555","#111"];
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+        <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${colors[0]}"/><stop offset=".55" stop-color="${colors[1]}"/><stop offset="1" stop-color="${colors[2]}"/></linearGradient></defs>
+        <rect width="120" height="120" fill="url(#g)"/>
+        <circle cx="60" cy="36" r="19" fill="rgba(245,230,205,.75)"/>
+        <path d="M22 112c8-33 68-33 76 0z" fill="rgba(12,12,13,.72)"/>
+        <path d="M30 70c20 18 41 18 60 0" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="8"/>
+        <text x="60" y="108" text-anchor="middle" font-family="Segoe UI,Arial" font-size="13" font-weight="800" fill="#fff3cf">${ch.name.toUpperCase()}</text>
+      </svg>`;
+      return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    }
+    function renderActions(){
+      if(!state){ return; }
+      const p = activePlayer();
+      $("actions").innerHTML = `
+        <button onclick="buyBoxing()" ${!isMyTurn()||p.turn.coin<2?"disabled":""}>Comprar moneda guardada (2)</button>
+        <button onclick="spendBoxing()" ${!isMyTurn()||p.boxings<1?"disabled":""}>Gastar moneda guardada (+1)</button>
+        <div class="tiny">Preparar una carta no quema metal. Los botones Quemar, Forzar y Atium se bloquean si no puedes pagar el metal.</div>
+        <div class="tiny">Reserva de metales de cartas: ${Object.entries(p.turn.metalPool).filter(x=>x[1]>0).map(x=>`${es(x[0])}:${x[1]}`).join(" ") || "ninguna"}</div>
+        <div class="tiny">Pendiente: refrescar ${p.turn.refreshAny}, eliminar propia ${p.turn.trashOwn}, empujar mercado ${p.turn.trashMarket}, recuperar ${p.turn.pull}</div>`;
+    }
+    function resourceChips(p){
+      return [
+        ["coin", "Monedas", p.turn.coin],
+        ["combat", "Combate", p.turn.combat],
+        ["mission", "Misión", p.turn.mission],
+        ["atium", "Atium", p.atium],
+        ["coin", "Reserva", p.boxings]
+      ].map(([kind,label,value]) => `
+        <span class="resChip" title="${esc(label)}">
+          ${icon(kind,label)}
+          <span class="resValue">${value}</span>
+          <span class="resLabel">${label}</span>
+        </span>
+      `).join("");
+    }
+    function effectSummary(eff={}){
+      const parts = [];
+      if(eff.coin) parts.push(`+${eff.coin} moneda${eff.coin>1?"s":""}`);
+      if(eff.combat) parts.push(`+${eff.combat} combate`);
+      if(eff.mission) parts.push(`+${eff.mission} misión`);
+      if(eff.heal) parts.push(`+${eff.heal} vida`);
+      if(eff.train) parts.push(`+${eff.train} entrenamiento`);
+      if(eff.draw) parts.push(`roba ${eff.draw}`);
+      if(eff.refreshAny) parts.push(`refresca ${eff.refreshAny}`);
+      if(eff.trashOwn) parts.push(`elimina ${eff.trashOwn} propia`);
+      if(eff.trashMarket) parts.push(`elimina ${eff.trashMarket} mercado`);
+      if(eff.pull) parts.push(`recupera ${eff.pull}`);
+      if(eff.atium) parts.push(`+${eff.atium} Atium`);
+      if(eff.burn) parts.push(`+${eff.burn} quemar`);
+      return parts.join(", ") || "sin recompensa";
+    }
+    function renderLegend(){
+      $("legend").innerHTML = [
+        ["train","entrenar"],["combat","combate"],["mission","misión"],["heal","curar"],
+        ["coin","moneda"],["burnExtra","quemar +1"],["draw","robar"],["refresh","refrescar"],
+        ["trash","eliminar"],["dominance","dominancia"],["burn","quemar"],["atium","atium"]
+      ].map(([k,t]) => `<div style="display:flex;align-items:center;gap:6px;margin:4px 0">${icon(k,t)} <span>${t}</span></div>`).join("");
+    }
+    function esc(s){ return String(s ?? "").replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch])); }
+
+    $("joinBtn").onclick = join;
+    $("newBtn").onclick = newGame;
+    $("leaveBtn").onclick = leaveGame;
+    $("startBtn").onclick = startGame;
+    $("endTurnBtn").onclick = endTurn;
+    $("helpBtn").onclick = () => window.open("rules.html", "_blank", "noopener");
+    function renderChat(chat){
+      $("chatlog").innerHTML = chat.map(m => `<div><span class="tiny">${esc(m.at)}</span> <b>${esc(m.name)}:</b> ${esc(m.text)}</div>`).join("");
+      $("chatlog").scrollTop = $("chatlog").scrollHeight;
+    }
+    $("chatBtn").onclick = async () => {
+      const t=$("chatInput").value.trim();
+      if(!t || !room) return;
+      await api(`/api/chat?room=${encodeURIComponent(room)}`, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({name:localStorage.playerName || "Jugador", text:t})
+      });
+      $("chatInput").value="";
+      poll();
+    };
+    window.addEventListener("load", () => {
+      // Read URL params for pre-filled name/room (used when opening a local player tab)
+      const params = new URLSearchParams(window.location.search);
+      const urlNombre = params.get("nombre");
+      const urlSala = params.get("sala");
+      if(urlNombre) { $("nameInput").value = urlNombre; localStorage.playerName = urlNombre; }
+      if(urlSala) { $("roomInput").value = urlSala; room = urlSala; localStorage.room = urlSala; }
+      else { $("roomInput").value = room; }
+      if(!urlNombre && localStorage.playerName) $("nameInput").value = localStorage.playerName;
+      // Auto-join if came from a "añadir jugador" link
+      if(urlNombre && urlSala) {
+        join().catch(()=>{});
+      }
+      setInterval(poll, 900);
+      poll();
+    });
+  </script>
+</body>
+</html>
